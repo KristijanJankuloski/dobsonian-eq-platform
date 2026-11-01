@@ -18,3 +18,10 @@
   margin: 0 auto;
   align-items: start;
 }
+
+.sketches {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: 16px;
+}

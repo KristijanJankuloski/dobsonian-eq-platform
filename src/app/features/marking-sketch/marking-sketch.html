@@ -1,0 +1,57 @@
+<mat-card appearance="outlined" [attr.data-testid]="testId() || null">
+  <mat-card-header>
+    <mat-card-title>{{ title() }}</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    @if (sketch(); as s) {
+      <svg
+        class="sketch"
+        role="img"
+        [attr.viewBox]="s.viewBox"
+        [attr.aria-label]="description()"
+        preserveAspectRatio="xMidYMid meet"
+      >
+        <title>{{ description() }}</title>
+        <g
+          class="lines"
+          fill="none"
+          [attr.stroke-width]="s.strokeMm"
+          [style.font-size.px]="s.fontSizeMm"
+        >
+          <!-- Radii from the centre of curvature to both arc ends -->
+          <line class="radius" x1="0" y1="0" [attr.x2]="s.arcStart.x" [attr.y2]="s.arcStart.y" />
+          <line class="radius" x1="0" y1="0" [attr.x2]="s.arcEnd.x" [attr.y2]="s.arcEnd.y" />
+          <!-- Chord between the arc ends -->
+          <line
+            class="chord"
+            [attr.x1]="s.arcStart.x"
+            [attr.y1]="s.arcStart.y"
+            [attr.x2]="s.arcEnd.x"
+            [attr.y2]="s.arcEnd.y"
+          />
+          <!-- The segment arc and the angle marker -->
+          <path class="arc" [attr.d]="s.arcPath" [attr.stroke-width]="s.strokeMm * 3" />
+          <path class="angle" [attr.d]="s.anglePath" />
+          <!-- Centre of curvature -->
+          <circle class="centre" cx="0" cy="0" [attr.r]="s.strokeMm * 4" />
+        </g>
+        <g class="labels" [style.font-size.px]="s.fontSizeMm" text-anchor="middle">
+          <text [attr.x]="s.radiusLabel.x" [attr.y]="s.radiusLabel.y" text-anchor="end">
+            R {{ radiusMm().toFixed(1) }} mm
+          </text>
+          <text [attr.x]="s.angleLabel.x" [attr.y]="s.angleLabel.y">
+            {{ angleDeg().toFixed(2) }}°
+          </text>
+          <text [attr.x]="s.chordLabel.x" [attr.y]="s.chordLabel.y">
+            chord {{ s.chordMm.toFixed(1) }} mm
+          </text>
+          <text x="0" [attr.y]="-s.fontSizeMm * 0.8">centre of curvature</text>
+        </g>
+      </svg>
+      <p class="note">
+        Cut length with margin: {{ cutChordMm().toFixed(1) }} mm. The chord drawn is between the arc
+        ends.
+      </p>
+    }
+  </mat-card-content>
+</mat-card>

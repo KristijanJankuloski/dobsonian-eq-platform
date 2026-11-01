@@ -1,0 +1,35 @@
+.sketch {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  color: var(--mat-sys-on-surface);
+}
+
+.radius,
+.chord,
+.angle {
+  stroke: var(--mat-sys-outline);
+}
+
+.chord,
+.radius {
+  stroke-dasharray: 6 4;
+}
+
+.arc {
+  stroke: var(--mat-sys-primary);
+}
+
+.centre {
+  fill: var(--mat-sys-primary);
+}
+
+.labels text {
+  fill: var(--mat-sys-on-surface);
+}
+
+.note {
+  margin: 8px 0 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}

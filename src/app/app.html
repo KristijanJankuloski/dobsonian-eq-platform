@@ -9,4 +9,23 @@
   <section class="panel" aria-label="Results">
     <app-results [inputs]="inputs()" [result]="result()" />
   </section>
+
+  @if (result(); as r) {
+    <section class="sketches" aria-label="Marking-out sketches">
+      <app-marking-sketch
+        title="North segment"
+        [radiusMm]="r.geometry.northRadiusMm"
+        [angleDeg]="r.geometry.segmentAngleDeg"
+        [cutChordMm]="r.geometry.northChordMm"
+        testId="sketch-north"
+      />
+      <app-marking-sketch
+        title="South segment"
+        [radiusMm]="r.geometry.southRadiusMm"
+        [angleDeg]="r.geometry.segmentAngleDeg"
+        [cutChordMm]="r.geometry.southChordMm"
+        testId="sketch-south"
+      />
+    </section>
+  }
 </main>
