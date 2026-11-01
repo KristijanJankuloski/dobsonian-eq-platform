@@ -145,6 +145,8 @@ A three.js scene in a dedicated Angular component (`PlatformViewerComponent`).
 
 ## 10. Proposed application structure
 
+Coding conventions are in [development/angular-development.md](development/angular-development.md).
+
 ```
 src/app/
   core/
