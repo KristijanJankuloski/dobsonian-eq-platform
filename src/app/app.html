@@ -6,9 +6,14 @@
   <section class="panel" aria-label="Inputs">
     <app-inputs-form [(value)]="formValue" />
   </section>
-  <section class="panel" aria-label="Results">
-    <app-results [inputs]="inputs()" [result]="result()" />
-  </section>
+  <div class="column">
+    <section class="panel" aria-label="Results">
+      <app-results [inputs]="inputs()" [result]="result()" />
+    </section>
+    <section class="panel" aria-label="Drive">
+      <app-drive [northRadiusMm]="northRadiusMm()" />
+    </section>
+  </div>
 
   @if (result(); as r) {
     <section class="sketches" aria-label="Marking-out sketches">

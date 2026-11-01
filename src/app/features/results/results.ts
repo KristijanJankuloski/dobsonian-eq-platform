@@ -1,8 +1,8 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { PlatformInputs, PlatformResult } from '@core/calculator';
+import { Clipboard } from '@shared/services/clipboard';
 import { ResultRow, ResultSection, SegmentRow } from './results.models';
 
 const mm = (v: number): string => v.toFixed(1);
@@ -15,7 +15,7 @@ const deg = (v: number): string => v.toFixed(2);
   templateUrl: './results.html',
 })
 export class Results {
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly clipboard = inject(Clipboard);
 
   readonly inputs = input<PlatformInputs | null>(null);
   readonly result = input<PlatformResult | null>(null);
@@ -108,12 +108,7 @@ export class Results {
     this.copy(`Circular segments\n${lines.join('\n')}`);
   }
 
-  private async copy(text: string): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(text);
-      this.snackBar.open('Copied to clipboard', undefined, { duration: 2000 });
-    } catch {
-      this.snackBar.open('Could not copy', undefined, { duration: 3000 });
-    }
+  private copy(text: string): void {
+    void this.clipboard.copy(text);
   }
 }
