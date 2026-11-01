@@ -1,9 +1,11 @@
-import { DEFAULT_INPUTS, calculatePlatform } from '@core/calculator';
-import { buildViewerModel, segmentProfile, Vec3 } from './viewer-model';
+import { DEFAULT_INPUTS, DEFAULT_OPTIONS, calculatePlatform } from '@core/calculator';
+import { buildViewerModel, pieceProfile, segmentProfile, Vec3 } from './viewer-model';
 
-const model = (over = {}) => {
+// One whole segment unless a test asks for the split.
+const WHOLE = { ...DEFAULT_OPTIONS, unusedMiddlePercent: 0 };
+const model = (over = {}, options = WHOLE) => {
   const inputs = { ...DEFAULT_INPUTS, ...over };
-  return { inputs, model: buildViewerModel(inputs, calculatePlatform(inputs)) };
+  return { inputs, model: buildViewerModel(inputs, calculatePlatform(inputs, options)) };
 };
 const dot = (p: Vec3, q: Vec3) => p.x * q.x + p.y * q.y + p.z * q.z;
 const dist = (p: Vec3, q: Vec3) => Math.hypot(p.x - q.x, p.y - q.y, p.z - q.z);
@@ -32,6 +34,25 @@ describe('buildViewerModel', () => {
     expect(dot(toContact, m.axisDir)).toBeCloseTo(0, 6);
     // ...and points along −e2 (down and north), touching the ground line.
     expect(dot(toContact, m.planeUp)).toBeCloseTo(-462.744, 2);
+  });
+
+  it('builds two mirrored end pieces around the unused middle by default', () => {
+    const { model: m } = model({}, DEFAULT_OPTIONS);
+    expect(m.segments.map((s) => s.id)).toEqual(['north-east', 'north-west']);
+    const [east, west] = m.segments;
+    const g = calculatePlatform(DEFAULT_INPUTS).geometry;
+    const inner = (g.pieceInnerAngleDeg * Math.PI) / 180;
+    for (const p of east.profile.slice(0, 1)) {
+      expect(p.a).toBeCloseTo(g.northRadiusMm * Math.sin(inner), 6);
+    }
+    // The west piece is the east piece mirrored across the centre line.
+    east.profile.forEach((p, i) => {
+      expect(west.profile[i].a).toBeCloseTo(-p.a, 9);
+      expect(west.profile[i].b).toBeCloseTo(p.b, 9);
+    });
+    // Every point stays east or west of the unused middle.
+    for (const p of east.profile)
+      expect(p.a).toBeGreaterThanOrEqual(g.northRadiusMm * Math.sin(inner) - 1e-6);
   });
 
   it('puts the south pivot on the polar axis in the platform plane', () => {
@@ -110,6 +131,15 @@ describe('buildViewerModel', () => {
     expect(texts).toContain('N');
     expect(texts).toContain('I = 463 mm');
     expect(texts).toContain('S pivot');
+  });
+});
+
+describe('pieceProfile', () => {
+  it('returns null for degenerate pieces', () => {
+    expect(pieceProfile(100, 0, 10, 30, 1)).toBeNull();
+    expect(pieceProfile(100, 50, 30, 10, 1)).toBeNull();
+    expect(pieceProfile(100, 95, 10, 30, 1)).toBeNull();
+    expect(pieceProfile(0, 50, 10, 30, 1)).toBeNull();
   });
 });
 

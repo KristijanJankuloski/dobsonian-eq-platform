@@ -60,12 +60,17 @@ O  = N + 22.5°                          angle of segment including travel exten
 P  = 2 · I · sin(O/2) + 30              chord length of north segment
 S  = F / tan(α)                         distance from origin to the south pivot
 T  = H − S                              south pivot to north bearing
+Split (m = unused middle, default 33.3 %):
+     inner angle = m · O/2, outer angle = O/2   (each side of the centre line)
+     two mirrored end pieces, each from the inner to the outer angle
+     piece width = I · (sin(O/2) − sin(inner)) + 30
 ```
 
 Notes:
 - The "origin" is the point on the line marking the bottom of the mount (top of the platform) where the polar axis, drawn at angle α, crosses it. The geometry is a side-view construction; the combined C of G sits on the polar axis. See the Sky at Night geometry diagram.
 - N is the angle subtended by the mount base width at the north radius. O adds 22.5° (≈ 1.5 h of sidereal travel at 15°/h) of extension. Make the 22.5° a configurable "extra tracking travel" parameter, defaulting to 22.5°.
 - The `+ 30` in P is a 30 mm allowance added by the source spreadsheet to the chord. Make it a configurable "chord margin", default 30 mm.
+- **Split segment.** Only the ends of the arc touch the rollers or pads, so the middle third (or quarter) is left out and the segment becomes two identical pieces, one the mirror of the other (Vogel). "Unused middle" is an advanced option, default 33.3 %, range 0–80 %; 0 keeps one whole segment.
 - The spreadsheet's name for L is "height of North bearing segment" and for M is "polar axis to platform (north bearing plane)".
 
 ### 4.3 Reference output (defaults above)
@@ -91,9 +96,10 @@ Grouped in Material cards/tabs, each with a copy-to-clipboard button.
 
 1. **Platform dimensions** — H, S, T, E, F, recommended top-board width, tracking time.
 2. **North pivot / north bearing** — radius I, segment angle N/O, chord P, segment height L, polar axis to platform M, distance from origin H.
-3. **Circular segments** — table for the north segment: radius, chord length, angle, thickness, sagitta, distance from origin. The segment also gets a 2D marking-out sketch (SVG) showing radius, chord, arc angle and centre of curvature.
-4. **Drive (optional section)** — see §6.
-5. **3D view** — see §7.
+3. **Circular segments** (the whole arc, for reference) — table for the north segment: radius, chord length, angle, thickness, sagitta, distance from origin. The segment also gets a 2D marking-out sketch (SVG) showing radius, chord, arc angle and centre of curvature.
+4. **Plans and downloads** — a 1:1 template of one end piece (cut two, flip the template for the second; one whole segment when no middle is left out) and a plan view of the platform (top board, mount footprint, the two pieces, the south pivot). Both are SVG drawn in millimetres, so a print at 100 % scale is 1:1, and each has a download button. The plan is for orientation: the piece positions are projected from the tilted segment plane.
+5. **Drive (optional section)** — see §6.
+6. **3D view** — see §7.
 
 ## 6. Optional drive calculations
 
@@ -121,7 +127,7 @@ Example from the source: 4 rph motor, 12.7 mm shaft → 607.9 mm (the source quo
 
 A three.js scene in a dedicated Angular component (`PlatformViewerComponent`).
 
-- Elements: ground/base board, bottom plane at thickness F, the north bearing segment (a cylinder section / extruded arc shape, radius I, angle O, thickness L), the south pivot bolt, top platform board, the mount base board footprint (E), the polar axis as a line, and an indication of the combined C of G on the polar axis.
+- Elements: ground/base board, bottom plane at thickness F, the north bearing segment as two mirrored end pieces (cylinder sections / extruded arc shapes, radius I, angle O, thickness L), the south pivot bolt, top platform board, the mount base board footprint (E), the polar axis as a line, and an indication of the combined C of G on the polar axis.
 - A simplified telescope/mount silhouette (box + cylinder) positioned by B, D and E for context. Toggleable.
 - The polar axis tilted by α from the horizontal. A compass-style "N" marker for orientation.
 - Controls: OrbitControls (rotate/zoom/pan), reset-view button, wireframe toggle, dimension labels toggle.

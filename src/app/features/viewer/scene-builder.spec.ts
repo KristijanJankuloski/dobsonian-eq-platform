@@ -1,15 +1,24 @@
 import { Mesh, MeshStandardMaterial, Vector3 } from 'three';
-import { DEFAULT_INPUTS, calculatePlatform } from '@core/calculator';
+import { DEFAULT_INPUTS, DEFAULT_OPTIONS, calculatePlatform } from '@core/calculator';
 import { FALLBACK_COLORS, buildScene } from './scene-builder';
 import { buildViewerModel } from './viewer-model';
 
-function build(over = {}) {
+function build(over = {}, options = { ...DEFAULT_OPTIONS, unusedMiddlePercent: 0 }) {
   const inputs = { ...DEFAULT_INPUTS, ...over };
-  const model = buildViewerModel(inputs, calculatePlatform(inputs));
+  const model = buildViewerModel(inputs, calculatePlatform(inputs, options));
   return { model, parts: buildScene(model, FALLBACK_COLORS, { labels: false }) };
 }
 
 describe('buildScene', () => {
+  it('builds the two end pieces when the middle is left out', () => {
+    const { parts } = build({}, DEFAULT_OPTIONS);
+    const names = parts.platform.children.map((c) => c.name);
+    expect(names).toContain('segment-north-east');
+    expect(names).toContain('segment-north-west');
+    expect(names).not.toContain('segment-north');
+    parts.dispose();
+  });
+
   it('builds the expected parts', () => {
     const { parts } = build();
     const names = parts.platform.children.map((c) => c.name);

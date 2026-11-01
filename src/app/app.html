@@ -33,6 +33,9 @@
         [cutChordMm]="r.geometry.northChordMm"
         testId="sketch-north"
       />
+      @if (inputs(); as i) {
+        <app-plans [inputs]="i" [result]="r" />
+      }
     </section>
   }
 </main>
