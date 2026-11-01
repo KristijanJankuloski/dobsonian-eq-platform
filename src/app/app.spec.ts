@@ -3,6 +3,8 @@ import { App } from './app';
 
 describe('App', () => {
   beforeEach(async () => {
+    localStorage.clear();
+    history.replaceState(null, '', '/');
     await TestBed.configureTestingModule({ imports: [App] }).compileComponents();
   });
 

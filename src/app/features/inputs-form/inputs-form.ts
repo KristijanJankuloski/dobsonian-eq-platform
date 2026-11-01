@@ -1,4 +1,4 @@
-import { Component, effect, model } from '@angular/core';
+import { Component, effect, inject, model } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -19,6 +19,7 @@ import {
 } from '@core/calculator';
 import { NumericField } from '@shared/components/numeric-field/numeric-field';
 import { PlatformFormValue } from './inputs-form.models';
+import { PlatformStateStore } from './platform-state-store';
 
 /** Validators that reject empty and non-finite values. */
 const finite: ValidatorFn = (c) =>
@@ -41,6 +42,10 @@ const positive: ValidatorFn = (c) =>
   templateUrl: './inputs-form.html',
 })
 export class InputsForm {
+  private readonly store = inject(PlatformStateStore);
+  /** Saved state from the URL or localStorage, or the defaults. */
+  private readonly initial = this.store.load();
+
   protected readonly minLatitude = MIN_LATITUDE_DEG;
   protected readonly maxLatitude = MAX_LATITUDE_DEG;
 
@@ -50,7 +55,7 @@ export class InputsForm {
   protected readonly form = new FormGroup(
     {
       // Absolute value is used, so a negative (southern) latitude is allowed.
-      latitudeDeg: this.numberControl(DEFAULT_INPUTS.latitudeDeg, [
+      latitudeDeg: this.numberControl(this.initial.inputs.latitudeDeg, [
         finite,
         (c) => {
           const v = Math.abs(Number(c.value));
@@ -59,26 +64,32 @@ export class InputsForm {
             : { min: { min: MIN_LATITUDE_DEG } };
         },
       ]),
-      scopeMassKg: this.numberControl(DEFAULT_INPUTS.scopeMassKg, [finite, Validators.min(0)]),
-      scopeCogHeightMm: this.numberControl(DEFAULT_INPUTS.scopeCogHeightMm, [
+      scopeMassKg: this.numberControl(this.initial.inputs.scopeMassKg, [finite, Validators.min(0)]),
+      scopeCogHeightMm: this.numberControl(this.initial.inputs.scopeCogHeightMm, [
         finite,
         Validators.min(0),
       ]),
-      mountMassKg: this.numberControl(DEFAULT_INPUTS.mountMassKg, [finite, Validators.min(0)]),
-      mountCogHeightMm: this.numberControl(DEFAULT_INPUTS.mountCogHeightMm, [
+      mountMassKg: this.numberControl(this.initial.inputs.mountMassKg, [finite, Validators.min(0)]),
+      mountCogHeightMm: this.numberControl(this.initial.inputs.mountCogHeightMm, [
         finite,
         Validators.min(0),
       ]),
-      mountBaseWidthMm: this.numberControl(DEFAULT_INPUTS.mountBaseWidthMm, [finite, positive]),
-      platformThicknessMm: this.numberControl(DEFAULT_INPUTS.platformThicknessMm, [
+      mountBaseWidthMm: this.numberControl(this.initial.inputs.mountBaseWidthMm, [
         finite,
         positive,
       ]),
-      extraTravelDeg: this.numberControl(DEFAULT_OPTIONS.extraTravelDeg, [
+      platformThicknessMm: this.numberControl(this.initial.inputs.platformThicknessMm, [
+        finite,
+        positive,
+      ]),
+      extraTravelDeg: this.numberControl(this.initial.options.extraTravelDeg, [
         finite,
         Validators.min(0),
       ]),
-      chordMarginMm: this.numberControl(DEFAULT_OPTIONS.chordMarginMm, [finite, Validators.min(0)]),
+      chordMarginMm: this.numberControl(this.initial.options.chordMarginMm, [
+        finite,
+        Validators.min(0),
+      ]),
     },
     { validators: totalMass },
   );
@@ -90,7 +101,9 @@ export class InputsForm {
   constructor() {
     effect(() => {
       this.formValue();
-      this.value.set(this.form.valid ? this.toFormValue() : null);
+      const value = this.form.valid ? this.toFormValue() : null;
+      this.value.set(value);
+      if (value) this.store.save(value);
     });
   }
 
