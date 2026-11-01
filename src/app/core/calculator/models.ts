@@ -30,12 +30,8 @@ export interface PlatformGeometry {
   cogHeightMm: number;
   /** H: distance from origin to north bearing, mm. */
   northDistanceMm: number;
-  /** J: distance from origin to south bearing, mm. */
-  southDistanceMm: number;
   /** I: radius of north bearing, mm. */
   northRadiusMm: number;
-  /** K: radius of south bearing, mm. */
-  southRadiusMm: number;
   /** L: radial height (thickness) of the segments, mm. */
   segmentHeightMm: number;
   /** M: polar axis to platform (north bearing plane), mm. */
@@ -46,8 +42,10 @@ export interface PlatformGeometry {
   segmentAngleDeg: number;
   /** P: chord length of north segment, mm. */
   northChordMm: number;
-  /** Q: chord length of south segment, mm. */
-  southChordMm: number;
+  /** Distance from origin to the south pivot (polar axis meets platform plane), mm. */
+  southPivotDistanceMm: number;
+  /** Distance from the south pivot to the north bearing along the platform, mm. */
+  pivotToNorthBearingMm: number;
 }
 
 export type WarningCode = 'lowLatitude';
@@ -61,8 +59,6 @@ export interface PlatformWarning {
 export interface PlatformChecks {
   /** Sagitta of the north segment, mm: board depth needed. */
   northSagittaMm: number;
-  /** Sagitta of the south segment, mm. */
-  southSagittaMm: number;
   /** Recommended minimum top-board width, mm (E + I/4). */
   minTopBoardWidthMm: number;
   /** Total tracking time in hours for the segment angle O. */

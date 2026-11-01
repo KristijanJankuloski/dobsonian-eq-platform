@@ -154,6 +154,16 @@ export function buildScene(
     root.add(marker);
   }
 
+  // South pivot bolt: sits on the polar axis, so it stays put while the platform turns.
+  const bolt = new Mesh(
+    new CylinderGeometry(model.labelHeightMm * 0.3, model.labelHeightMm * 0.3, 60, 16),
+    standard(colors.tertiary),
+  );
+  bolt.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), v3(model.axisDir));
+  bolt.position.set(model.pivot.x, model.pivot.y, model.pivot.z);
+  bolt.name = 'south-pivot';
+  root.add(bolt);
+
   // Moving parts: segments, top board, mount, telescope, centre of gravity.
   const segmentMaterial = standard(colors.primary);
   const axis = v3(model.axisDir);

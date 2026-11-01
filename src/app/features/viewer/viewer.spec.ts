@@ -95,7 +95,7 @@ describe('Viewer', () => {
 
   it('notes a segment that cannot be drawn', async () => {
     await setup();
-    const inputs = { ...DEFAULT_INPUTS, platformThicknessMm: 300 };
+    const inputs = { ...DEFAULT_INPUTS, platformThicknessMm: 500 };
     fixture.componentRef.setInput('inputs', inputs);
     fixture.componentRef.setInput('result', calculatePlatform(inputs));
     await fixture.whenStable();

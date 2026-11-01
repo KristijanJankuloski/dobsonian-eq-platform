@@ -13,15 +13,14 @@ describe('calculateGeometry', () => {
     const g = calculateGeometry(DEFAULT_INPUTS);
     expect(g.cogHeightMm).toBeCloseTo(454.238, 3);
     expect(g.northDistanceMm).toBeCloseTo(597.746, 3);
-    expect(g.southDistanceMm).toBeCloseTo(267.746, 3);
     expect(g.northRadiusMm).toBeCloseTo(462.744, 3);
-    expect(g.southRadiusMm).toBeCloseTo(207.275, 3);
     expect(g.segmentHeightMm).toBeCloseTo(118.483, 3);
     expect(g.polarAxisToPlatformMm).toBeCloseTo(344.262, 3);
     expect(g.baseAngleDeg).toBeCloseTo(39.249, 3);
     expect(g.segmentAngleDeg).toBeCloseTo(61.749, 3);
     expect(g.northChordMm).toBeCloseTo(504.925, 3);
-    expect(g.southChordMm).toBeCloseTo(242.731, 3);
+    expect(g.southPivotDistanceMm).toBeCloseTo(61.3, 1);
+    expect(g.pivotToNorthBearingMm).toBeCloseTo(536.4, 1);
   });
 
   it('uses the absolute value of latitude', () => {

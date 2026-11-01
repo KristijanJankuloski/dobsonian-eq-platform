@@ -28,7 +28,7 @@ describe('Results', () => {
     expect(text).toContain('597.7 mm'); // H
     expect(text).toContain('462.7 mm'); // I
     expect(text).toContain('504.9 mm'); // P
-    expect(text).toContain('242.7 mm'); // Q
+    expect(text).toContain('61.3 mm'); // south pivot
     expect(text).toContain('61.75 °'); // O
     expect(el.querySelector('[data-testid="card-segments"]')).not.toBeNull();
     expect(el.querySelector('[data-testid="warning"]')).toBeNull();
