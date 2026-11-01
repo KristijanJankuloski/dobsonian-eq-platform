@@ -1,0 +1,95 @@
+<form class="form" [formGroup]="form" aria-label="Telescope and mount inputs">
+  <h2 class="title">Inputs</h2>
+
+  <div class="grid">
+    <app-numeric-field
+      [control]="form.controls.latitudeDeg"
+      label="Latitude (α)"
+      unit="°"
+      [min]="minLatitude"
+      [max]="maxLatitude"
+      hint="Southern latitudes: the absolute value is used"
+      testId="latitude"
+    />
+    <app-numeric-field
+      [control]="form.controls.scopeMassKg"
+      label="Weight of scope (A)"
+      unit="kg"
+      [min]="0"
+      testId="scope-mass"
+    />
+    <app-numeric-field
+      [control]="form.controls.scopeCogHeightMm"
+      label="Scope centre of gravity height (B)"
+      unit="mm"
+      [min]="0"
+      hint="Centre of the altitude bearings, above ground"
+      testId="scope-cog"
+    />
+    <app-numeric-field
+      [control]="form.controls.mountMassKg"
+      label="Weight of mount / box (C)"
+      unit="kg"
+      [min]="0"
+      testId="mount-mass"
+    />
+    <app-numeric-field
+      [control]="form.controls.mountCogHeightMm"
+      label="Mount centre of gravity height (D)"
+      unit="mm"
+      [min]="0"
+      hint="Found by balancing the box on its side"
+      testId="mount-cog"
+    />
+    <app-numeric-field
+      [control]="form.controls.mountBaseWidthMm"
+      label="Mount base width (E)"
+      unit="mm"
+      [min]="1"
+      testId="base-width"
+    />
+    <app-numeric-field
+      [control]="form.controls.platformThicknessMm"
+      label="Platform thickness (F)"
+      unit="mm"
+      [min]="1"
+      testId="thickness"
+    />
+  </div>
+
+  @if (form.hasError('totalMass')) {
+    <p class="error" role="alert" data-testid="mass-error">
+      Weight of scope plus weight of mount must be greater than 0.
+    </p>
+  }
+
+  <mat-expansion-panel class="advanced">
+    <mat-expansion-panel-header>
+      <mat-panel-title>Advanced</mat-panel-title>
+    </mat-expansion-panel-header>
+    <div class="grid">
+      <app-numeric-field
+        [control]="form.controls.extraTravelDeg"
+        label="Extra tracking travel"
+        unit="°"
+        [min]="0"
+        hint="Added to the base segment angle (about 1.5 h)"
+        testId="extra-travel"
+      />
+      <app-numeric-field
+        [control]="form.controls.chordMarginMm"
+        label="Chord margin"
+        unit="mm"
+        [min]="0"
+        hint="Allowance added to each segment chord"
+        testId="chord-margin"
+      />
+    </div>
+  </mat-expansion-panel>
+
+  <div class="actions">
+    <button mat-stroked-button type="button" (click)="reset()" data-testid="reset">
+      Reset to defaults
+    </button>
+  </div>
+</form>

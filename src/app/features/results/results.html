@@ -1,0 +1,69 @@
+@if (result(); as r) {
+  <div class="results">
+    @for (warning of warnings(); track warning.code) {
+      <p class="warning" role="status" data-testid="warning">
+        <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+        {{ warning.message }}
+      </p>
+    }
+
+    @for (section of sections(); track section.id) {
+      <mat-card appearance="outlined" [attr.data-testid]="'card-' + section.id">
+        <mat-card-header>
+          <mat-card-title>{{ section.title }}</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <table class="values">
+            <tbody>
+              @for (row of section.rows; track row.label) {
+                <tr>
+                  <th scope="row">
+                    {{ row.label }}
+                    @if (row.symbol) {
+                      <span class="symbol">({{ row.symbol }})</span>
+                    }
+                  </th>
+                  <td class="num">{{ row.value }} {{ row.unit }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </mat-card-content>
+        <mat-card-actions align="end">
+          <button mat-button type="button" (click)="copySection(section)">Copy</button>
+        </mat-card-actions>
+      </mat-card>
+    }
+
+    <mat-card appearance="outlined" data-testid="card-segments">
+      <mat-card-header>
+        <mat-card-title>Circular segments</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <table class="values segments">
+          <thead>
+            <tr>
+              <th scope="col"><span class="visually-hidden">Measure</span></th>
+              <th scope="col" class="num">North</th>
+              <th scope="col" class="num">South</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of segments(); track s.label) {
+              <tr>
+                <th scope="row">{{ s.label }}</th>
+                <td class="num">{{ s.north }} {{ s.unit }}</td>
+                <td class="num">{{ s.south }} {{ s.unit }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </mat-card-content>
+      <mat-card-actions align="end">
+        <button mat-button type="button" (click)="copySegments()">Copy</button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+} @else {
+  <p class="empty" data-testid="empty">Enter valid inputs to see the results.</p>
+}
