@@ -52,4 +52,14 @@ describe('App', () => {
     expect(el.querySelector('[data-testid="empty"]')).toBeNull();
     expect(el.textContent).not.toContain('597.7 mm');
   });
+
+  it('has a skip link that moves focus to the main content', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
+    el.querySelector<HTMLAnchorElement>('.skip-link')!.click();
+    expect(document.activeElement?.id).toBe('main');
+    expect(el.querySelector('main#main')).not.toBeNull();
+    expect(el.querySelector('[role="banner"]')).not.toBeNull();
+  });
 });

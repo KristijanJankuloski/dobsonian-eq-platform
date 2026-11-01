@@ -36,4 +36,10 @@ describe('NumericField', () => {
     expect(control.invalid).toBe(true);
     expect(el.querySelector('mat-error')?.textContent).toContain('at least 1');
   });
+
+  it('turns off browser autofill and asks for a decimal keypad', () => {
+    const input = (fixture.nativeElement as HTMLElement).querySelector('input')!;
+    expect(input.getAttribute('autocomplete')).toBe('off');
+    expect(input.getAttribute('inputmode')).toBe('decimal');
+  });
 });

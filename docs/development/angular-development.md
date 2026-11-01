@@ -29,13 +29,13 @@ The app does not exist yet; see [docs/SPEC.md](../SPEC.md). Where this file says
 
 ## Project layout
 
-| Path | What goes there |
-|---|---|
-| `src/app/core/calculator/` | The pure calculation module and its models/types, plus specs. No framework imports. |
-| `src/app/core/` (other) | App-wide wiring only: providers, theme setup, the layout shell. |
-| `src/app/shared/` | `components/` (Material wrappers), `services/`, `models/`, `pipes/`, `validators/` used by more than one feature. |
-| `src/app/features/<area>/` | One self-contained folder per feature: `inputs-form/`, `results/`, `marking-sketch/`, `viewer/` (see SPEC §10). |
-| `src/testing/` | Test helpers. |
+| Path                       | What goes there                                                                                                   |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `src/app/core/calculator/` | The pure calculation module and its models/types, plus specs. No framework imports.                               |
+| `src/app/core/` (other)    | App-wide wiring only: providers, theme setup, the layout shell.                                                   |
+| `src/app/shared/`          | `components/` (Material wrappers), `services/`, `models/`, `pipes/`, `validators/` used by more than one feature. |
+| `src/app/features/<area>/` | One self-contained folder per feature: `inputs-form/`, `results/`, `marking-sketch/`, `viewer/` (see SPEC §10).   |
+| `src/testing/`             | Test helpers.                                                                                                     |
 
 Path aliases (`tsconfig.json`): `@core/*`, `@shared/*`. Use them across folders; use relative imports inside one folder.
 
@@ -43,13 +43,13 @@ Path aliases (`tsconfig.json`): `@core/*`, `@shared/*`. Use them across folders;
 
 Run from the project root. Confirm paths with `--dry-run` the first time.
 
-| Item | Command | Creates |
-|---|---|---|
-| Component | `npx ng g c features/<area>/<name>` or `shared/components/<name>` | `.ts`, `.html`, `.css`, `.spec.ts` |
-| Service | `npx ng g s shared/services/<name>` (or inside the feature) | `.ts`, `.spec.ts` |
-| Pipe | `npx ng g p shared/pipes/<name>` | `.ts`, `.spec.ts` |
-| Directive | `npx ng g d shared/<name>` | `.ts`, `.spec.ts` |
-| Calculator functions, models | none | write `core/calculator/<name>.ts` and its spec by hand, and say that no generator exists |
+| Item                         | Command                                                           | Creates                                                                                  |
+| ---------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Component                    | `npx ng g c features/<area>/<name>` or `shared/components/<name>` | `.ts`, `.html`, `.css`, `.spec.ts`                                                       |
+| Service                      | `npx ng g s shared/services/<name>` (or inside the feature)       | `.ts`, `.spec.ts`                                                                        |
+| Pipe                         | `npx ng g p shared/pipes/<name>`                                  | `.ts`, `.spec.ts`                                                                        |
+| Directive                    | `npx ng g d shared/<name>`                                        | `.ts`, `.spec.ts`                                                                        |
+| Calculator functions, models | none                                                              | write `core/calculator/<name>.ts` and its spec by hand, and say that no generator exists |
 
 - Use `ng add` instead of `npm install` for Angular libraries (`@angular/material`). three.js is a plain `npm install three` plus `@types/three`.
 - If a dev server is running, restart it after adding files by hand; its watcher can cache "template file not found".
@@ -106,6 +106,17 @@ Run from the project root. Confirm paths with `--dry-run` the first time.
 - Viewer: do not test pixels. Test the pure builders, and a smoke test that the component creates and destroys its scene without throwing. Stub WebGL (jsdom has none); mock `WebGLRenderer` rather than running it.
 - Routes files do not need tests.
 
+## Accessibility and mobile
+
+- Landmarks and headings: one `<h1>` in the banner, `<main id="main">`, card titles as `<h2 mat-card-title>`. Keep the skip link working.
+- Every control has a visible label or an `aria-label`. Icon-only and repeated buttons (for example "Copy") get a name that says what they act on.
+- Data tables have a `<caption>` (visually hidden is fine) and `scope` on headers.
+- Status and empty-state messages use `role="status"`. Do not announce every keystroke.
+- Colours come from the Material theme tokens, so contrast holds in light and dark. Do not hard-code colours.
+- Layouts must work at 360 px wide with no horizontal scroll. Use `minmax(min(100%, Npx), 1fr)` grids, not fixed widths.
+- The 3D view is supplementary: its numbers must also be available as text in the results. Its canvas area is focusable and pans with the arrow keys.
+- Before a PR that changes the UI, check it at 360 px and 1200 px, light and dark, and run an axe-core audit (no violations).
+
 ## Tooling
 
 - Commands: `npm install`, `npm start`, `npx ng build`, `npx ng test --watch=false`.
@@ -115,10 +126,10 @@ Run from the project root. Confirm paths with `--dry-run` the first time.
 
 ## Differences from the Cerbo guidelines
 
-| Topic | Cerbo | This repo |
-|---|---|---|
-| UI library | Taiga UI 5 + Tailwind | Angular Material, no Tailwind |
-| State | `@ngrx/signals` stores | Component signals and `computed`; no store unless the app grows |
-| HTTP, session, i18n | Cookie session, API, ngx-translate | None: client-only, English, metric |
-| Extra rules | Result/AuthError handling | Pure calculator module, isolated three.js viewer |
-| Kept the same | Separate files, generator-first, reactive forms, no `detectChanges()` | Same |
+| Topic               | Cerbo                                                                 | This repo                                                       |
+| ------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------- |
+| UI library          | Taiga UI 5 + Tailwind                                                 | Angular Material, no Tailwind                                   |
+| State               | `@ngrx/signals` stores                                                | Component signals and `computed`; no store unless the app grows |
+| HTTP, session, i18n | Cookie session, API, ngx-translate                                    | None: client-only, English, metric                              |
+| Extra rules         | Result/AuthError handling                                             | Pure calculator module, isolated three.js viewer                |
+| Kept the same       | Separate files, generator-first, reactive forms, no `detectChanges()` | Same                                                            |

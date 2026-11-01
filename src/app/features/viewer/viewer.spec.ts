@@ -125,4 +125,15 @@ describe('Viewer', () => {
     expect(play.textContent).toContain('Play');
     expect(() => fixture.destroy()).not.toThrow();
   });
+
+  it('makes the canvas area focusable with an accessible name and keyboard panning', async () => {
+    await setup();
+    const host = el.querySelector<HTMLElement>('[data-testid="viewer-host"]')!;
+    expect(host.getAttribute('tabindex')).toBe('0');
+    expect(host.getAttribute('aria-label')).toContain('arrow keys');
+    expect(el.querySelector('h2')?.textContent).toContain('3D view');
+    expect(
+      el.querySelector('input[aria-label="Tracking angle"]')?.getAttribute('aria-valuetext'),
+    ).toContain('degrees');
+  });
 });

@@ -127,6 +127,9 @@ export class Viewer {
     this.destroyRef.onDestroy(() => this.destroy());
   }
 
+  /** Spoken value of the tracking slider. */
+  protected readonly formatAngle = (value: number): string => `${value.toFixed(1)} degrees`;
+
   protected setAngle(value: number): void {
     this.angleDeg.set(value);
   }
@@ -173,6 +176,8 @@ export class Viewer {
     this.camera = new PerspectiveCamera(40, 1, 10, 100000);
     this.controls = new OrbitControls(this.camera, renderer.domElement);
     this.controls.enableDamping = false;
+    // Arrow keys pan the view when the canvas area has focus.
+    this.controls.listenToKeyEvents(host);
     this.controls.addEventListener('change', () => this.requestRender());
 
     if (typeof ResizeObserver !== 'undefined') {

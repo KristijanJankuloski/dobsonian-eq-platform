@@ -52,4 +52,20 @@ describe('Results', () => {
     expect(open).toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
+
+  it('gives every copy button and table an accessible name', async () => {
+    await setup();
+    const labels = [...el.querySelectorAll('button')].map((b) => b.getAttribute('aria-label'));
+    expect(labels.length).toBe(3);
+    expect(new Set(labels).size).toBe(3);
+    expect(labels.every((l) => l?.startsWith('Copy '))).toBe(true);
+    const tables = [...el.querySelectorAll('table')];
+    expect(tables.length).toBe(3);
+    expect(tables.every((t) => t.querySelector('caption')?.textContent?.trim())).toBe(true);
+  });
+
+  it('announces the empty state politely', async () => {
+    await setup(null);
+    expect(el.querySelector('[data-testid="empty"]')?.getAttribute('role')).toBe('status');
+  });
 });

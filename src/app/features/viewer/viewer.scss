@@ -8,6 +8,11 @@
   background: var(--mat-sys-surface-container-low);
   overflow: hidden;
 
+  &:focus-visible {
+    outline: 2px solid var(--mat-sys-primary);
+    outline-offset: 2px;
+  }
+
   &.hidden {
     display: none;
   }

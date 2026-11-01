@@ -1,6 +1,6 @@
 <mat-card appearance="outlined" data-testid="card-drive">
   <mat-card-header>
-    <mat-card-title>Drive (optional)</mat-card-title>
+    <h2 mat-card-title>Drive (optional)</h2>
     <mat-card-subtitle>Needs valid platform inputs</mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
@@ -28,6 +28,9 @@
 
       @if (worm(); as w) {
         <table class="values" data-testid="worm-results">
+          <caption class="visually-hidden">
+            Worm drive results
+          </caption>
           <tbody>
             <tr>
               <th scope="row">Required spindle speed</th>
@@ -44,10 +47,17 @@
           </tbody>
         </table>
         <div class="actions">
-          <button mat-button type="button" (click)="copyWorm()">Copy</button>
+          <button
+            mat-button
+            type="button"
+            aria-label="Copy worm drive results"
+            (click)="copyWorm()"
+          >
+            Copy
+          </button>
         </div>
       } @else {
-        <p class="empty" data-testid="worm-empty">
+        <p class="empty" role="status" data-testid="worm-empty">
           Enter valid platform and worm drive inputs to see the gear ratio.
         </p>
       }
@@ -74,6 +84,9 @@
 
       @if (direct(); as d) {
         <table class="values" data-testid="direct-results">
+          <caption class="visually-hidden">
+            Direct drive results
+          </caption>
           <tbody>
             <tr>
               <th scope="row">Required north radius</th>
@@ -86,10 +99,17 @@
           </tbody>
         </table>
         <div class="actions">
-          <button mat-button type="button" (click)="copyDirect()">Copy</button>
+          <button
+            mat-button
+            type="button"
+            aria-label="Copy direct drive results"
+            (click)="copyDirect()"
+          >
+            Copy
+          </button>
         </div>
       } @else if (directIncomplete()) {
-        <p class="empty" data-testid="direct-incomplete">
+        <p class="empty" role="status" data-testid="direct-incomplete">
           Enter both the motor speed and the shaft diameter.
         </p>
       }

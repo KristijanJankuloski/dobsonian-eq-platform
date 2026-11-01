@@ -10,10 +10,15 @@
     @for (section of sections(); track section.id) {
       <mat-card appearance="outlined" [attr.data-testid]="'card-' + section.id">
         <mat-card-header>
-          <mat-card-title>{{ section.title }}</mat-card-title>
+          <h2 mat-card-title>{{ section.title }}</h2>
         </mat-card-header>
         <mat-card-content>
           <table class="values">
+            <caption class="visually-hidden">
+              {{
+                section.title
+              }}
+            </caption>
             <tbody>
               @for (row of section.rows; track row.label) {
                 <tr>
@@ -30,17 +35,27 @@
           </table>
         </mat-card-content>
         <mat-card-actions align="end">
-          <button mat-button type="button" (click)="copySection(section)">Copy</button>
+          <button
+            mat-button
+            type="button"
+            [attr.aria-label]="'Copy ' + section.title"
+            (click)="copySection(section)"
+          >
+            Copy
+          </button>
         </mat-card-actions>
       </mat-card>
     }
 
     <mat-card appearance="outlined" data-testid="card-segments">
       <mat-card-header>
-        <mat-card-title>Circular segments</mat-card-title>
+        <h2 mat-card-title>Circular segments</h2>
       </mat-card-header>
       <mat-card-content>
         <table class="values segments">
+          <caption class="visually-hidden">
+            Circular segments, north and south
+          </caption>
           <thead>
             <tr>
               <th scope="col"><span class="visually-hidden">Measure</span></th>
@@ -60,10 +75,17 @@
         </table>
       </mat-card-content>
       <mat-card-actions align="end">
-        <button mat-button type="button" (click)="copySegments()">Copy</button>
+        <button
+          mat-button
+          type="button"
+          aria-label="Copy circular segments"
+          (click)="copySegments()"
+        >
+          Copy
+        </button>
       </mat-card-actions>
     </mat-card>
   </div>
 } @else {
-  <p class="empty" data-testid="empty">Enter valid inputs to see the results.</p>
+  <p class="empty" role="status" data-testid="empty">Enter valid inputs to see the results.</p>
 }
