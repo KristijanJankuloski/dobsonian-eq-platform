@@ -4,11 +4,12 @@ import { calculatePlatform } from '@core/calculator';
 import { Drive } from './features/drive/drive';
 import { InputsForm } from './features/inputs-form/inputs-form';
 import { PlatformFormValue } from './features/inputs-form/inputs-form.models';
+import { Viewer } from './features/viewer/viewer';
 import { MarkingSketch } from './features/marking-sketch/marking-sketch';
 import { Results } from './features/results/results';
 
 @Component({
-  imports: [MatToolbarModule, InputsForm, Results, Drive, MarkingSketch],
+  imports: [MatToolbarModule, InputsForm, Results, Drive, MarkingSketch, Viewer],
   selector: 'app-root',
   styleUrl: './app.scss',
   templateUrl: './app.html',
