@@ -3,10 +3,11 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { calculatePlatform } from '@core/calculator';
 import { InputsForm } from './features/inputs-form/inputs-form';
 import { PlatformFormValue } from './features/inputs-form/inputs-form.models';
+import { MarkingSketch } from './features/marking-sketch/marking-sketch';
 import { Results } from './features/results/results';
 
 @Component({
-  imports: [MatToolbarModule, InputsForm, Results],
+  imports: [MatToolbarModule, InputsForm, Results, MarkingSketch],
   selector: 'app-root',
   styleUrl: './app.scss',
   templateUrl: './app.html',
