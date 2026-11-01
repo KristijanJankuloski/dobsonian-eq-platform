@@ -29,13 +29,13 @@ The app does not exist yet; see [docs/SPEC.md](../SPEC.md). Where this file says
 
 ## Project layout
 
-| Path                       | What goes there                                                                                                   |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `src/app/core/calculator/` | The pure calculation module and its models/types, plus specs. No framework imports.                               |
-| `src/app/core/` (other)    | App-wide wiring only: providers, theme setup, the layout shell.                                                   |
-| `src/app/shared/`          | `components/` (Material wrappers), `services/`, `models/`, `pipes/`, `validators/` used by more than one feature. |
-| `src/app/features/<area>/` | One self-contained folder per feature: `inputs-form/`, `results/`, `marking-sketch/`, `viewer/` (see SPEC §10).   |
-| `src/testing/`             | Test helpers.                                                                                                     |
+| Path | What goes there |
+|---|---|
+| `src/app/core/calculator/` | The pure calculation module and its models/types, plus specs. No framework imports. |
+| `src/app/core/` (other) | App-wide wiring only: providers, theme setup, the layout shell. |
+| `src/app/shared/` | `components/` (Material wrappers), `services/`, `models/`, `pipes/`, `validators/` used by more than one feature. |
+| `src/app/features/<area>/` | One self-contained folder per feature: `inputs-form/`, `results/`, `marking-sketch/`, `viewer/` (see SPEC §10). |
+| `src/testing/` | Test helpers. |
 
 Path aliases (`tsconfig.json`): `@core/*`, `@shared/*`. Use them across folders; use relative imports inside one folder.
 
@@ -43,13 +43,13 @@ Path aliases (`tsconfig.json`): `@core/*`, `@shared/*`. Use them across folders;
 
 Run from the project root. Confirm paths with `--dry-run` the first time.
 
-| Item                         | Command                                                           | Creates                                                                                  |
-| ---------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Component                    | `npx ng g c features/<area>/<name>` or `shared/components/<name>` | `.ts`, `.html`, `.css`, `.spec.ts`                                                       |
-| Service                      | `npx ng g s shared/services/<name>` (or inside the feature)       | `.ts`, `.spec.ts`                                                                        |
-| Pipe                         | `npx ng g p shared/pipes/<name>`                                  | `.ts`, `.spec.ts`                                                                        |
-| Directive                    | `npx ng g d shared/<name>`                                        | `.ts`, `.spec.ts`                                                                        |
-| Calculator functions, models | none                                                              | write `core/calculator/<name>.ts` and its spec by hand, and say that no generator exists |
+| Item | Command | Creates |
+|---|---|---|
+| Component | `npx ng g c features/<area>/<name>` or `shared/components/<name>` | `.ts`, `.html`, `.css`, `.spec.ts` |
+| Service | `npx ng g s shared/services/<name>` (or inside the feature) | `.ts`, `.spec.ts` |
+| Pipe | `npx ng g p shared/pipes/<name>` | `.ts`, `.spec.ts` |
+| Directive | `npx ng g d shared/<name>` | `.ts`, `.spec.ts` |
+| Calculator functions, models | none | write `core/calculator/<name>.ts` and its spec by hand, and say that no generator exists |
 
 - Use `ng add` instead of `npm install` for Angular libraries (`@angular/material`). three.js is a plain `npm install three` plus `@types/three`.
 - If a dev server is running, restart it after adding files by hand; its watcher can cache "template file not found".
@@ -126,10 +126,10 @@ Run from the project root. Confirm paths with `--dry-run` the first time.
 
 ## Differences from the Cerbo guidelines
 
-| Topic               | Cerbo                                                                 | This repo                                                       |
-| ------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------- |
-| UI library          | Taiga UI 5 + Tailwind                                                 | Angular Material, no Tailwind                                   |
-| State               | `@ngrx/signals` stores                                                | Component signals and `computed`; no store unless the app grows |
-| HTTP, session, i18n | Cookie session, API, ngx-translate                                    | None: client-only, English, metric                              |
-| Extra rules         | Result/AuthError handling                                             | Pure calculator module, isolated three.js viewer                |
-| Kept the same       | Separate files, generator-first, reactive forms, no `detectChanges()` | Same                                                            |
+| Topic | Cerbo | This repo |
+|---|---|---|
+| UI library | Taiga UI 5 + Tailwind | Angular Material, no Tailwind |
+| State | `@ngrx/signals` stores | Component signals and `computed`; no store unless the app grows |
+| HTTP, session, i18n | Cookie session, API, ngx-translate | None: client-only, English, metric |
+| Extra rules | Result/AuthError handling | Pure calculator module, isolated three.js viewer |
+| Kept the same | Separate files, generator-first, reactive forms, no `detectChanges()` | Same |
