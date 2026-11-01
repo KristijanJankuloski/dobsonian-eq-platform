@@ -1,8 +1,10 @@
-<mat-toolbar color="primary" class="toolbar">
+<a class="skip-link" href="#main" (click)="skipToMain($event)">Skip to the calculator</a>
+
+<mat-toolbar color="primary" class="toolbar" role="banner">
   <h1 class="app-title">Dobsonian EQ Platform Calculator</h1>
 </mat-toolbar>
 
-<main class="layout">
+<main id="main" class="layout" tabindex="-1">
   <section class="panel" aria-label="Inputs">
     <app-inputs-form [(value)]="formValue" />
   </section>

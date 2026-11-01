@@ -106,6 +106,17 @@ Run from the project root. Confirm paths with `--dry-run` the first time.
 - Viewer: do not test pixels. Test the pure builders, and a smoke test that the component creates and destroys its scene without throwing. Stub WebGL (jsdom has none); mock `WebGLRenderer` rather than running it.
 - Routes files do not need tests.
 
+## Accessibility and mobile
+
+- Landmarks and headings: one `<h1>` in the banner, `<main id="main">`, card titles as `<h2 mat-card-title>`. Keep the skip link working.
+- Every control has a visible label or an `aria-label`. Icon-only and repeated buttons (for example "Copy") get a name that says what they act on.
+- Data tables have a `<caption>` (visually hidden is fine) and `scope` on headers.
+- Status and empty-state messages use `role="status"`. Do not announce every keystroke.
+- Colours come from the Material theme tokens, so contrast holds in light and dark. Do not hard-code colours.
+- Layouts must work at 360 px wide with no horizontal scroll. Use `minmax(min(100%, Npx), 1fr)` grids, not fixed widths.
+- The 3D view is supplementary: its numbers must also be available as text in the results. Its canvas area is focusable and pans with the arrow keys.
+- Before a PR that changes the UI, check it at 360 px and 1200 px, light and dark, and run an axe-core audit (no violations).
+
 ## Tooling
 
 - Commands: `npm install`, `npm start`, `npx ng build`, `npx ng test --watch=false`.

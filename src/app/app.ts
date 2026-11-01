@@ -15,6 +15,12 @@ import { Results } from './features/results/results';
   templateUrl: './app.html',
 })
 export class App {
+  /** Moves focus to the main content. A plain #main link would resolve against <base href>. */
+  protected skipToMain(event: Event): void {
+    event.preventDefault();
+    document.getElementById('main')?.focus();
+  }
+
   protected readonly formValue = signal<PlatformFormValue | null>(null);
 
   protected readonly inputs = computed(() => this.formValue()?.inputs ?? null);

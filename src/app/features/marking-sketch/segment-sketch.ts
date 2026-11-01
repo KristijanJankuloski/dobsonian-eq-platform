@@ -79,7 +79,7 @@ export function buildSegmentSketch(radiusMm: number, angleDeg: number): SegmentS
   const maxY = half >= Math.PI / 2 ? radiusMm : Math.max(arcStart.y, arcEnd.y, radiusMm);
   const extent = Math.max(maxX - minX, maxY - minY);
 
-  const fontSizeMm = extent / 26;
+  const fontSizeMm = extent / 18;
   const strokeMm = extent / 400;
   // Room for labels around the drawing.
   const pad = fontSizeMm * 4;

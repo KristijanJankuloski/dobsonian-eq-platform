@@ -1,6 +1,6 @@
 <mat-card appearance="outlined" [attr.data-testid]="testId() || null">
   <mat-card-header>
-    <mat-card-title>{{ title() }}</mat-card-title>
+    <h2 mat-card-title>{{ title() }}</h2>
   </mat-card-header>
   <mat-card-content>
     @if (sketch(); as s) {

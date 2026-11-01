@@ -1,0 +1,59 @@
+name: CI and deploy
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+# Only one deployment at a time; a newer push replaces a queued one.
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Test and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Unit tests
+        run: npx ng test --watch=false
+
+      # GitHub Pages serves the site from /<repository>/, so the base href must match.
+      - name: Build
+        run: npx ng build --base-href "/${{ github.event.repository.name }}/"
+
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/dobsonian-eq-platform/browser
+
+  deploy:
+    name: Deploy to GitHub Pages
+    # Deploy only from master, never from a pull request.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
