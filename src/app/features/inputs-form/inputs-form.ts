@@ -16,6 +16,7 @@ import {
   DEFAULT_OPTIONS,
   MAX_LATITUDE_DEG,
   MIN_LATITUDE_DEG,
+  MAX_UNUSED_MIDDLE_PERCENT,
 } from '@core/calculator';
 import { NumericField } from '@shared/components/numeric-field/numeric-field';
 import { PlatformFormValue } from './inputs-form.models';
@@ -90,6 +91,11 @@ export class InputsForm {
         finite,
         Validators.min(0),
       ]),
+      unusedMiddlePercent: this.numberControl(this.initial.options.unusedMiddlePercent, [
+        finite,
+        Validators.min(0),
+        Validators.max(MAX_UNUSED_MIDDLE_PERCENT),
+      ]),
     },
     { validators: totalMass },
   );
@@ -127,7 +133,11 @@ export class InputsForm {
         mountBaseWidthMm: v.mountBaseWidthMm!,
         platformThicknessMm: v.platformThicknessMm!,
       },
-      options: { extraTravelDeg: v.extraTravelDeg!, chordMarginMm: v.chordMarginMm! },
+      options: {
+        extraTravelDeg: v.extraTravelDeg!,
+        chordMarginMm: v.chordMarginMm!,
+        unusedMiddlePercent: v.unusedMiddlePercent!,
+      },
     };
   }
 }

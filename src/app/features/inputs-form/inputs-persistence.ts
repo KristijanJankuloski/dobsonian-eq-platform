@@ -37,6 +37,7 @@ const FIELDS: Field[] = [
   field('f', 'positive', 'inputs', 'platformThicknessMm'),
   field('travel', 'nonNegative', 'options', 'extraTravelDeg'),
   field('margin', 'nonNegative', 'options', 'chordMarginMm'),
+  field('middle', 'nonNegative', 'options', 'unusedMiddlePercent'),
 ];
 
 function field<G extends 'inputs' | 'options'>(

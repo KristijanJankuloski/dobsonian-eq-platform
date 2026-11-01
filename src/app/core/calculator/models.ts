@@ -22,6 +22,12 @@ export interface PlatformOptions {
   extraTravelDeg: number;
   /** Margin added to segment chords, in mm. Default 30. */
   chordMarginMm: number;
+  /**
+   * Share of the segment arc, in percent, that is left out of the middle
+   * because it is not used (Vogel). The rest is two mirrored end pieces.
+   * Default 33.3 (one third); 0 keeps one whole segment. Limited to 0–80.
+   */
+  unusedMiddlePercent: number;
 }
 
 /** Core geometry results (SPEC §4.2). Letters match the Sky at Night diagram. */
@@ -42,6 +48,14 @@ export interface PlatformGeometry {
   segmentAngleDeg: number;
   /** P: chord length of north segment, mm. */
   northChordMm: number;
+  /** Half the gap angle: where each end piece starts, measured from the centre line, degrees. */
+  pieceInnerAngleDeg: number;
+  /** Where each end piece ends (O / 2), degrees. */
+  pieceOuterAngleDeg: number;
+  /** Width of one end piece measured across the platform, including the chord margin, mm. */
+  pieceWidthMm: number;
+  /** Largest height of an end piece, from the flat edge to the arc, mm. */
+  pieceHeightMm: number;
   /** Distance from origin to the south pivot (polar axis meets platform plane), mm. */
   southPivotDistanceMm: number;
   /** Distance from the south pivot to the north bearing along the platform, mm. */

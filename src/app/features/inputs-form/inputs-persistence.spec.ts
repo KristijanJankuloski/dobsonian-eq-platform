@@ -7,7 +7,7 @@ describe('inputs persistence', () => {
   it('round-trips a form state', () => {
     const value = {
       inputs: { ...DEFAULT_INPUTS, latitudeDeg: -35.5, scopeMassKg: 20 },
-      options: { extraTravelDeg: 30, chordMarginMm: 10 },
+      options: { extraTravelDeg: 30, chordMarginMm: 10, unusedMiddlePercent: 25 },
     };
     expect(fromQueryParams(toQueryParams(value))).toEqual(value);
   });
@@ -44,10 +44,10 @@ describe('inputs persistence', () => {
   });
 
   it('clamps negative non-negative fields to zero and rejects non-positive widths', () => {
-    const v = parse('b=-5&d=-1&travel=-3&margin=-2&e=0&f=-10')!;
+    const v = parse('b=-5&d=-1&travel=-3&margin=-2&middle=-1&e=0&f=-10')!;
     expect(v.inputs.scopeCogHeightMm).toBe(0);
     expect(v.inputs.mountCogHeightMm).toBe(0);
-    expect(v.options).toEqual({ extraTravelDeg: 0, chordMarginMm: 0 });
+    expect(v.options).toEqual({ extraTravelDeg: 0, chordMarginMm: 0, unusedMiddlePercent: 0 });
     expect(v.inputs.mountBaseWidthMm).toBe(DEFAULT_INPUTS.mountBaseWidthMm);
     expect(v.inputs.platformThicknessMm).toBe(DEFAULT_INPUTS.platformThicknessMm);
   });

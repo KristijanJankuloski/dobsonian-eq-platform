@@ -1,0 +1,22 @@
+:host {
+  display: contents;
+}
+
+.drawing {
+  background: #fff;
+  border-radius: var(--mat-sys-corner-small);
+  padding: 8px;
+}
+
+.drawing ::ng-deep svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 460px;
+}
+
+.note {
+  margin: 8px 0 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}

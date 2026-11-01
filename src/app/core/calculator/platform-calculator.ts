@@ -25,7 +25,10 @@ export const DEFAULT_INPUTS: PlatformInputs = {
 export const DEFAULT_OPTIONS: PlatformOptions = {
   extraTravelDeg: 22.5,
   chordMarginMm: 30,
+  unusedMiddlePercent: 100 / 3,
 };
+
+export const MAX_UNUSED_MIDDLE_PERCENT = 80;
 
 export const MIN_LATITUDE_DEG = 1;
 export const MAX_LATITUDE_DEG = 89;
@@ -82,6 +85,13 @@ export function calculateGeometry(
   const O = N + options.extraTravelDeg;
   const halfO = toRad(O / 2);
   const P = 2 * I * Math.sin(halfO) + options.chordMarginMm;
+  // Two mirrored end pieces; the unused middle part of the arc is left out.
+  const middle =
+    Math.min(Math.max(options.unusedMiddlePercent, 0), MAX_UNUSED_MIDDLE_PERCENT) / 100;
+  const innerRad = halfO * middle;
+  const pieceInnerAngleDeg = toDeg(innerRad);
+  const pieceWidthMm = I * (Math.sin(halfO) - Math.sin(innerRad)) + options.chordMarginMm;
+  const pieceHeightMm = I * Math.cos(innerRad) - M;
   // South pivot: where the polar axis crosses the platform plane (height F).
   const pivot = F / Math.tan(alpha);
 
@@ -94,6 +104,10 @@ export function calculateGeometry(
     baseAngleDeg: N,
     segmentAngleDeg: O,
     northChordMm: P,
+    pieceInnerAngleDeg,
+    pieceOuterAngleDeg: O / 2,
+    pieceWidthMm,
+    pieceHeightMm,
     southPivotDistanceMm: pivot,
     pivotToNorthBearingMm: H - pivot,
   };

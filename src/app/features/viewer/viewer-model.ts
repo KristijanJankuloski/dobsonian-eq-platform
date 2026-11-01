@@ -34,7 +34,8 @@ export interface Point2 {
 }
 
 export interface SegmentModel {
-  id: 'north';
+  /** 'north' for one whole segment, else one of the two mirrored end pieces. */
+  id: 'north' | 'north-east' | 'north-west';
   radiusMm: number;
   /** Centre of the segment's circle, on the polar axis. */
   centre: Vec3;
@@ -125,6 +126,36 @@ export function segmentProfile(
   return points;
 }
 
+/**
+ * Outline of one end piece: the part of the segment between `innerDeg` and
+ * `outerDeg` from the centre line, on the east (+1) or west (−1) side. Same
+ * plane and conventions as `segmentProfile`; null when degenerate.
+ */
+export function pieceProfile(
+  radiusMm: number,
+  topDistanceMm: number,
+  innerDeg: number,
+  outerDeg: number,
+  side: 1 | -1,
+): Point2[] | null {
+  const outer = toRad(outerDeg);
+  const inner = toRad(innerDeg);
+  if (!(radiusMm > 0) || !(topDistanceMm > 0) || !(outer > inner) || outer >= Math.PI / 2) {
+    return null;
+  }
+  if (radiusMm * Math.cos(outer) <= topDistanceMm) return null;
+  const top = -topDistanceMm;
+  const points: Point2[] = [
+    { a: side * radiusMm * Math.sin(inner), b: top },
+    { a: side * radiusMm * Math.sin(outer), b: top },
+  ];
+  for (let i = 0; i <= ARC_STEPS / 2; i++) {
+    const phi = outer - ((outer - inner) * i) / (ARC_STEPS / 2);
+    points.push({ a: side * radiusMm * Math.sin(phi), b: -radiusMm * Math.cos(phi) });
+  }
+  return points;
+}
+
 /** Builds the 3D model for valid inputs and their calculation result. */
 export function buildViewerModel(inputs: PlatformInputs, result: PlatformResult): ViewerModel {
   const g = result.geometry;
@@ -146,23 +177,41 @@ export function buildViewerModel(inputs: PlatformInputs, result: PlatformResult)
 
   const segments: SegmentModel[] = [];
   const skipped: ViewerModel['skipped'] = [];
-  const specs = [{ id: 'north' as const, radius: g.northRadiusMm, distance: H }];
-  for (const s of specs) {
-    const topDistance = s.radius - g.segmentHeightMm;
-    const profile = segmentProfile(s.radius, topDistance, g.segmentAngleDeg);
-    if (!profile) {
+  const radius = g.northRadiusMm;
+  const topDistance = radius - g.segmentHeightMm;
+  const whole = g.pieceInnerAngleDeg === 0;
+  const pieces = whole
+    ? [{ id: 'north' as const, profile: segmentProfile(radius, topDistance, g.segmentAngleDeg) }]
+    : [
+        {
+          id: 'north-east' as const,
+          profile: pieceProfile(radius, topDistance, g.pieceInnerAngleDeg, g.pieceOuterAngleDeg, 1),
+        },
+        {
+          id: 'north-west' as const,
+          profile: pieceProfile(
+            radius,
+            topDistance,
+            g.pieceInnerAngleDeg,
+            g.pieceOuterAngleDeg,
+            -1,
+          ),
+        },
+      ];
+  for (const piece of pieces) {
+    if (!piece.profile) {
       skipped.push({
-        id: s.id,
-        reason: `The ${s.id} segment cannot be drawn: its height is too large for its radius.`,
+        id: 'north',
+        reason: 'The north segment cannot be drawn: its height is too large for its radius.',
       });
-      continue;
+      break;
     }
     segments.push({
-      id: s.id,
-      radiusMm: s.radius,
-      centre: scale(axisDir, s.distance * cosA),
-      profile,
-      contact: { x: 0, y: 0, z: s.distance },
+      id: piece.id,
+      radiusMm: radius,
+      centre: scale(axisDir, H * cosA),
+      profile: piece.profile,
+      contact: { x: 0, y: 0, z: H },
     });
   }
 
@@ -206,10 +255,10 @@ export function buildViewerModel(inputs: PlatformInputs, result: PlatformResult)
     { text: 'S pivot', position: add(pivot, { x: 0, y: labelHeightMm, z: -labelHeightMm }) },
     { text: 'C of G', position: add(cog, { x: 0, y: labelHeightMm, z: 0 }) },
   ];
-  for (const s of segments) {
+  if (segments.length) {
     labels.push({
-      text: `I = ${s.radiusMm.toFixed(0)} mm`,
-      position: { x: boardWidth / 2 + labelHeightMm * 2, y: labelHeightMm, z: s.contact.z },
+      text: `I = ${radius.toFixed(0)} mm`,
+      position: { x: boardWidth / 2 + labelHeightMm * 2, y: labelHeightMm, z: H },
     });
   }
 

@@ -1,5 +1,6 @@
 import {
   DEFAULT_INPUTS,
+  DEFAULT_OPTIONS,
   calculateDirectDrive,
   calculateGeometry,
   calculatePlatform,
@@ -23,13 +24,43 @@ describe('calculateGeometry', () => {
     expect(g.pivotToNorthBearingMm).toBeCloseTo(536.4, 1);
   });
 
+  it('splits the segment into two end pieces around an unused middle', () => {
+    const g = calculateGeometry(DEFAULT_INPUTS); // default: one third unused
+    expect(g.pieceOuterAngleDeg).toBeCloseTo(g.segmentAngleDeg / 2, 9);
+    expect(g.pieceInnerAngleDeg).toBeCloseTo(g.segmentAngleDeg / 6, 9);
+    const half = (g.segmentAngleDeg / 2) * (Math.PI / 180);
+    const inner = (g.pieceInnerAngleDeg * Math.PI) / 180;
+    expect(g.pieceWidthMm).toBeCloseTo(
+      g.northRadiusMm * (Math.sin(half) - Math.sin(inner)) + 30,
+      6,
+    );
+    expect(g.pieceHeightMm).toBeCloseTo(
+      g.northRadiusMm * Math.cos(inner) - g.polarAxisToPlatformMm,
+      6,
+    );
+  });
+
+  it('keeps one whole segment with 0 % unused and clamps absurd values', () => {
+    const whole = calculateGeometry(DEFAULT_INPUTS, { ...DEFAULT_OPTIONS, unusedMiddlePercent: 0 });
+    expect(whole.pieceInnerAngleDeg).toBe(0);
+    const clamped = calculateGeometry(DEFAULT_INPUTS, {
+      ...DEFAULT_OPTIONS,
+      unusedMiddlePercent: 500,
+    });
+    expect(clamped.pieceInnerAngleDeg).toBeCloseTo(0.8 * clamped.pieceOuterAngleDeg, 9);
+  });
+
   it('uses the absolute value of latitude', () => {
     const south = calculateGeometry({ ...DEFAULT_INPUTS, latitudeDeg: -50.7279 });
     expect(south).toEqual(calculateGeometry(DEFAULT_INPUTS));
   });
 
   it('honours the extra travel and chord margin options', () => {
-    const g = calculateGeometry(DEFAULT_INPUTS, { extraTravelDeg: 0, chordMarginMm: 0 });
+    const g = calculateGeometry(DEFAULT_INPUTS, {
+      extraTravelDeg: 0,
+      chordMarginMm: 0,
+      unusedMiddlePercent: 0,
+    });
     expect(g.segmentAngleDeg).toBeCloseTo(g.baseAngleDeg, 9);
     expect(g.northChordMm).toBeCloseTo(
       2 * g.northRadiusMm * Math.sin((g.baseAngleDeg * Math.PI) / 360),
