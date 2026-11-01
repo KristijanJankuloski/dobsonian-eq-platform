@@ -16,6 +16,8 @@ describe('InputsForm', () => {
   }
 
   beforeEach(async () => {
+    localStorage.clear();
+    history.replaceState(null, '', '/');
     await TestBed.configureTestingModule({ imports: [InputsForm] }).compileComponents();
     fixture = TestBed.createComponent(InputsForm);
     el = fixture.nativeElement;
@@ -63,5 +65,24 @@ describe('InputsForm', () => {
     field('reset').click();
     await fixture.whenStable();
     expect(fixture.componentInstance.value()?.inputs.latitudeDeg).toBe(DEFAULT_INPUTS.latitudeDeg);
+  });
+
+  it('starts from the values saved in the URL', async () => {
+    TestBed.resetTestingModule();
+    history.replaceState(null, '', '/?lat=40&a=15');
+    await TestBed.configureTestingModule({ imports: [InputsForm] }).compileComponents();
+    const f = TestBed.createComponent(InputsForm);
+    await f.whenStable();
+    expect(f.componentInstance.value()?.inputs.latitudeDeg).toBe(40);
+    expect(f.componentInstance.value()?.inputs.scopeMassKg).toBe(15);
+  });
+
+  it('saves valid changes to the URL and not invalid ones', async () => {
+    await type('latitude', '45');
+    await vi.waitFor(() => expect(location.search).toContain('lat=45'));
+    await type('latitude', '90');
+    await new Promise((resolve) => setTimeout(resolve, 450));
+    expect(location.search).toContain('lat=45');
+    expect(location.search).not.toContain('lat=90');
   });
 });
