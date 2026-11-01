@@ -33,7 +33,7 @@ The app does not exist yet; see [docs/SPEC.md](../SPEC.md). Where this file says
 |---|---|
 | `src/app/core/calculator/` | The pure calculation module and its models/types, plus specs. No framework imports. |
 | `src/app/core/` (other) | App-wide wiring only: providers, theme setup, the layout shell. |
-| `src/app/shared/` | `components/` (Material wrappers), `services/`, `models/`, `pipes/`, `validators/` used by more than one feature. |
+| `src/app/shared/` | `components/` (Material wrappers), `services/`, `models/` (for example `platform-model.ts`, the pure 3D geometry used by the viewer and the plans), `pipes/`, `validators/` used by more than one feature. |
 | `src/app/features/<area>/` | One self-contained folder per feature: `inputs-form/`, `results/`, `marking-sketch/`, `viewer/` (see SPEC §10). |
 | `src/testing/` | Test helpers. |
 

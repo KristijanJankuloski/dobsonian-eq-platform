@@ -1,5 +1,5 @@
 import { DEFAULT_INPUTS, DEFAULT_OPTIONS, calculatePlatform } from '@core/calculator';
-import { buildViewerModel, pieceProfile, segmentProfile, Vec3 } from './viewer-model';
+import { buildViewerModel, pieceProfile, segmentProfile, Vec3 } from './platform-model';
 
 // One whole segment unless a test asks for the split.
 const WHOLE = { ...DEFAULT_OPTIONS, unusedMiddlePercent: 0 };
@@ -21,15 +21,22 @@ describe('buildViewerModel', () => {
 
   it('puts the segment centre on the axis at the reference radius from its contact point', () => {
     const { model: m } = model();
-    const north = m.segments.find((s) => s.id === 'north')!;
+    const north = m.segments.find((s) => s.id === 'whole')!;
     expect(m.segments.length).toBe(1);
-    expect(dist(north.centre, north.contact)).toBeCloseTo(462.744, 2); // I
-    expect(north.contact.z).toBeCloseTo(597.746, 3); // H
+    // The lowest point of the arc, (a, b) = (0, −I), mapped to 3D.
+    const contact = {
+      x: north.centre.x - 462.744 * m.planeUp.x,
+      y: north.centre.y - 462.744 * m.planeUp.y,
+      z: north.centre.z - 462.744 * m.planeUp.z,
+    };
+    expect(dist(north.centre, contact)).toBeCloseTo(462.744, 2); // I
+    expect(contact.y).toBeCloseTo(0, 2); // on the ground
+    expect(contact.z).toBeCloseTo(597.746, 2); // H
     // The contact point is perpendicular to the axis from the centre.
     const toContact = {
-      x: north.contact.x - north.centre.x,
-      y: north.contact.y - north.centre.y,
-      z: north.contact.z - north.centre.z,
+      x: contact.x - north.centre.x,
+      y: contact.y - north.centre.y,
+      z: contact.z - north.centre.z,
     };
     expect(dot(toContact, m.axisDir)).toBeCloseTo(0, 6);
     // ...and points along −e2 (down and north), touching the ground line.
@@ -38,11 +45,12 @@ describe('buildViewerModel', () => {
 
   it('builds two mirrored end pieces around the unused middle by default', () => {
     const { model: m } = model({}, DEFAULT_OPTIONS);
-    expect(m.segments.map((s) => s.id)).toEqual(['north-east', 'north-west']);
+    expect(m.segments.map((s) => s.id)).toEqual(['piece-east', 'piece-west']);
+    // +x is west in the northern hemisphere, so the west piece is on +a.
     const [east, west] = m.segments;
     const g = calculatePlatform(DEFAULT_INPUTS).geometry;
     const inner = (g.pieceInnerAngleDeg * Math.PI) / 180;
-    for (const p of east.profile.slice(0, 1)) {
+    for (const p of west.profile.slice(0, 1)) {
       expect(p.a).toBeCloseTo(g.northRadiusMm * Math.sin(inner), 6);
     }
     // The west piece is the east piece mirrored across the centre line.
@@ -51,7 +59,7 @@ describe('buildViewerModel', () => {
       expect(west.profile[i].b).toBeCloseTo(p.b, 9);
     });
     // Every point stays east or west of the unused middle.
-    for (const p of east.profile)
+    for (const p of west.profile)
       expect(p.a).toBeGreaterThanOrEqual(g.northRadiusMm * Math.sin(inner) - 1e-6);
   });
 
@@ -63,22 +71,30 @@ describe('buildViewerModel', () => {
     expect(m.pivot.y / m.axisDir.y).toBeCloseTo(m.pivot.z / m.axisDir.z, 9);
   });
 
-  it('places the platform plane at M = I − L from the axis (SPEC §4.3)', () => {
+  it('puts the flat edge against the underside of the top board', () => {
     const { model: m } = model();
-    const north = m.segments.find((s) => s.id === 'north')!;
-    // Flat edge: first two profile points, at b = −M. M = 344.262.
-    expect(north.profile[0].b).toBeCloseTo(-344.262, 2);
-    // A point on that edge, mapped to 3D, sits at height y = F.
+    const north = m.segments.find((s) => s.id === 'whole')!;
+    const t = DEFAULT_OPTIONS.topBoardThicknessMm;
+    const cosA = Math.cos((50.7279 * Math.PI) / 180);
+    // Flat edge: first two profile points, at b = −(M + t / cos α). M = 344.262.
+    expect(north.profile[0].b).toBeCloseTo(-(344.262 + t / cosA), 2);
+    // A point on that edge, mapped to 3D, sits at the board's underside y = F − t.
     const a = north.profile[0].a;
     const b = north.profile[0].b;
-    const y = north.centre.y + b * m.planeUp.y; // a runs east, so it does not change y
+    const y = north.centre.y + b * m.planeUp.y; // a runs along x, so it does not change y
     expect(a).toBeLessThan(0);
-    expect(y).toBeCloseTo(75, 6);
+    expect(y).toBeCloseTo(75 - t, 6);
+    expect(m.topBoard.centre.y - m.topBoard.size.y / 2).toBeCloseTo(75 - t, 9);
+  });
+
+  it('puts the flat edge on the platform top with no top board (M = I − L)', () => {
+    const { model: m } = model({}, { ...WHOLE, topBoardThicknessMm: 0 });
+    expect(m.segments[0].profile[0].b).toBeCloseTo(-344.262, 2);
   });
 
   it('puts the arc between the ends at the segment angle and the radius', () => {
     const { model: m } = model();
-    const north = m.segments.find((s) => s.id === 'north')!;
+    const north = m.segments.find((s) => s.id === 'whole')!;
     const arc = north.profile.slice(2);
     for (const p of arc) expect(Math.hypot(p.a, p.b)).toBeCloseTo(462.744, 3);
     const first = arc[0];
@@ -101,13 +117,30 @@ describe('buildViewerModel', () => {
     expect(m.mountBox.size.x).toBe(330);
     expect(m.mountBox.centre.y - m.mountBox.size.y / 2).toBeCloseTo(75, 9);
     expect(m.mountBox.size.y).toBeCloseTo(450, 9); // 2 × D
-    expect(m.topBoard.size.x).toBeGreaterThanOrEqual(445.7);
+    // At least the chord P, which is wider than E + I/4 here.
+    expect(m.topBoard.size.x).toBeCloseTo(504.925, 3);
   });
 
   it('gives a camera target inside the scene and a positive distance', () => {
     const { model: m } = model();
     expect(m.camera.distanceMm).toBeGreaterThan(m.groundBoard.size.z);
-    expect(m.halfTravelDeg).toBeCloseTo(61.749 / 2, 3);
+  });
+
+  it('turns through half the extra travel either side, against the Earth', () => {
+    const { model: m } = model();
+    expect(m.halfTravelDeg).toBeCloseTo(22.5 / 2, 9);
+    expect(m.trackingDirection).toBe(-1);
+    expect(model({ latitudeDeg: -40 }).model.trackingDirection).toBe(1);
+  });
+
+  it('forms a right-handed frame with z towards the pole', () => {
+    // x = y × z: (0,1,0) × (0,0,1) = (1,0,0), which is west when z is north.
+    // The east piece is therefore on −x in the north and +x in the south.
+    const north = model({}, DEFAULT_OPTIONS).model;
+    const east = north.segments.find((s) => s.id === 'piece-east')!;
+    expect(east.profile[1].a).toBeLessThan(0);
+    const south = model({ latitudeDeg: -50.7279 }, DEFAULT_OPTIONS).model;
+    expect(south.segments.find((s) => s.id === 'piece-east')!.profile[1].a).toBeGreaterThan(0);
   });
 
   it('mirrors a southern latitude', () => {
@@ -115,14 +148,23 @@ describe('buildViewerModel', () => {
     const south = model({ latitudeDeg: -50.7279 }).model;
     expect(south.axisDir).toEqual(north.axisDir);
     expect(south.latitudeDeg).toBeCloseTo(50.7279, 9);
+    const texts = south.labels.map((l) => l.text);
+    expect(texts).toContain('S');
+    expect(texts).toContain('N pivot');
+    expect(south.labels.find((l) => l.pole)?.text).toBe('S');
   });
 
   it('skips a segment that cannot be drawn instead of producing a bad shape', () => {
     // A very thick platform makes L larger than the radius.
     const { model: m } = model({ platformThicknessMm: 500 });
-    expect(m.skipped.length).toBeGreaterThan(0);
-    for (const s of m.segments)
-      for (const p of s.profile) expect(Number.isFinite(p.a + p.b)).toBe(true);
+    expect(m.skipped.length).toBe(1);
+    expect(m.segments).toEqual([]);
+  });
+
+  it('skips the segment at a very high latitude, where M is negative', () => {
+    const { model: m } = model({ latitudeDeg: 85 }, DEFAULT_OPTIONS);
+    expect(m.skipped.length).toBe(1);
+    expect(m.segments).toEqual([]);
   });
 
   it('includes a north marker and a dimension label and a pivot label', () => {

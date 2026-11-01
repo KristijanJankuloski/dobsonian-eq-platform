@@ -34,6 +34,16 @@ describe('buildSegmentSketch', () => {
     expect(y + h).toBeGreaterThan(462.744);
   });
 
+  it.each([200, 300])('keeps an arc of %s° inside the viewBox', (angle) => {
+    const s = buildSegmentSketch(100, angle);
+    const [x, y, w, h] = s.viewBox.split(' ').map(Number);
+    // Past 180° the arc ends rise above the centre; past 90° each side it bulges to ±R.
+    expect(y).toBeLessThan(Math.min(s.arcStart.y, 0));
+    expect(x).toBeLessThan(-100);
+    expect(x + w).toBeGreaterThan(100);
+    expect(y + h).toBeGreaterThan(100);
+  });
+
   it('rejects invalid radius and angle', () => {
     expect(() => buildSegmentSketch(0, 60)).toThrow(RangeError);
     expect(() => buildSegmentSketch(100, 0)).toThrow(RangeError);

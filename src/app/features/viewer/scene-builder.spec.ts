@@ -1,7 +1,7 @@
 import { Mesh, MeshStandardMaterial, Vector3 } from 'three';
 import { DEFAULT_INPUTS, DEFAULT_OPTIONS, calculatePlatform } from '@core/calculator';
 import { FALLBACK_COLORS, buildScene } from './scene-builder';
-import { buildViewerModel } from './viewer-model';
+import { buildViewerModel } from '@shared/models/platform-model';
 
 function build(over = {}, options = { ...DEFAULT_OPTIONS, unusedMiddlePercent: 0 }) {
   const inputs = { ...DEFAULT_INPUTS, ...over };
@@ -13,18 +13,17 @@ describe('buildScene', () => {
   it('builds the two end pieces when the middle is left out', () => {
     const { parts } = build({}, DEFAULT_OPTIONS);
     const names = parts.platform.children.map((c) => c.name);
-    expect(names).toContain('segment-north-east');
-    expect(names).toContain('segment-north-west');
-    expect(names).not.toContain('segment-north');
+    expect(names).toContain('segment-piece-east');
+    expect(names).toContain('segment-piece-west');
+    expect(names).not.toContain('segment-whole');
     parts.dispose();
   });
 
   it('builds the expected parts', () => {
     const { parts } = build();
     const names = parts.platform.children.map((c) => c.name);
-    expect(names).toContain('segment-north');
-    expect(names).not.toContain('segment-south');
-    expect(parts.root.getObjectByName('south-pivot')).toBeDefined();
+    expect(names).toContain('segment-whole');
+    expect(parts.root.getObjectByName('pivot')).toBeDefined();
     expect(names).toContain('top-board');
     expect(names).toContain('cog');
     expect(parts.silhouette.children.map((c) => c.name).sort()).toEqual(['mount', 'tube']);
@@ -34,10 +33,10 @@ describe('buildScene', () => {
 
   it('puts the north segment bounding box around the bearing contact point', () => {
     const { parts, model } = build();
-    const mesh = parts.platform.getObjectByName('segment-north') as Mesh;
+    const mesh = parts.platform.getObjectByName('segment-whole') as Mesh;
     mesh.geometry.computeBoundingBox();
     const box = mesh.geometry.boundingBox!;
-    const contact = model.segments[0].contact;
+    const contact = { z: model.segments[0].centre.z - 462.744 * model.planeUp.z };
     // The arc touches the ground at its mid-plane; the 18 mm board extends 9 mm
     // either side along the tilted polar axis, so its lowest corner is 9·sin α below.
     expect(box.min.y).toBeCloseTo(-9 * Math.sin((50.7279 * Math.PI) / 180), 1);

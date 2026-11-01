@@ -1,3 +1,5 @@
+import { toRad } from '@core/util/math';
+
 /**
  * Pure geometry for the 2D marking-out sketch of one bearing segment.
  *
@@ -35,8 +37,6 @@ export interface SegmentSketch {
   strokeMm: number;
 }
 
-const toRad = (deg: number): number => (deg * Math.PI) / 180;
-
 /** Round to 0.01 mm so paths are short and stable. */
 const r2 = (v: number): number => Math.round(v * 100) / 100;
 
@@ -71,12 +71,15 @@ export function buildSegmentSketch(radiusMm: number, angleDeg: number): SegmentS
   const arcEnd = pointAt(radiusMm, half);
   const chordMm = 2 * radiusMm * Math.sin(half);
 
-  // Drawing extent: the centre, both arc ends, and the arc bottom (y = R when
-  // the arc passes straight below the centre, i.e. when half < 180°).
-  const minX = Math.min(arcStart.x, arcEnd.x, 0);
-  const maxX = Math.max(arcStart.x, arcEnd.x, 0);
-  const minY = 0;
-  const maxY = half >= Math.PI / 2 ? radiusMm : Math.max(arcStart.y, arcEnd.y, radiusMm);
+  // Drawing extent: the centre, both arc ends, and the arc bottom (y = R; the
+  // arc always passes straight below the centre). Past 90° either side the
+  // arc bulges sideways to x = ±R, and past 180° in total its ends rise above
+  // the centre (negative y).
+  const sideways = half >= Math.PI / 2;
+  const minX = sideways ? -radiusMm : Math.min(arcStart.x, arcEnd.x, 0);
+  const maxX = sideways ? radiusMm : Math.max(arcStart.x, arcEnd.x, 0);
+  const minY = Math.min(0, arcStart.y, arcEnd.y);
+  const maxY = radiusMm;
   const extent = Math.max(maxX - minX, maxY - minY);
 
   const fontSizeMm = extent / 18;

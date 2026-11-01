@@ -17,17 +17,19 @@
     </section>
   </div>
 
+  <!-- Kept mounted while the inputs are briefly invalid, so the WebGL context
+       and the camera survive; the viewer shows its own empty state. -->
+  <section class="viewer" aria-label="3D view">
+    @defer (on idle) {
+      <app-viewer [inputs]="inputs()" [result]="result()" />
+    } @placeholder {
+      <p class="viewer-loading">Loading the 3D view…</p>
+    }
+  </section>
   @if (result(); as r) {
-    <section class="viewer" aria-label="3D view">
-      @defer (on idle) {
-        <app-viewer [inputs]="inputs()" [result]="result()" />
-      } @placeholder {
-        <p class="viewer-loading">Loading the 3D view…</p>
-      }
-    </section>
     <section class="sketches" aria-label="Marking-out sketches">
       <app-marking-sketch
-        title="North segment"
+        [title]="sketchTitle()"
         [radiusMm]="r.geometry.northRadiusMm"
         [angleDeg]="r.geometry.segmentAngleDeg"
         [cutChordMm]="r.geometry.northChordMm"

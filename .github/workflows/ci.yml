@@ -7,10 +7,11 @@ on:
     branches: [master]
   workflow_dispatch:
 
-# Only one deployment at a time; a newer push replaces a queued one.
+# One run per branch or PR at a time. A newer push cancels an older PR run,
+# but never a running deployment from master (a half-finished Pages deploy).
 concurrency:
   group: pages-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read

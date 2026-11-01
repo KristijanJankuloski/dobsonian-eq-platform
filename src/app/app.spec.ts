@@ -45,6 +45,9 @@ describe('App', () => {
     await fixture.whenStable();
     expect(el.querySelector('[data-testid="empty"]')).not.toBeNull();
 
+    // The 3D view stays mounted (its own empty state) instead of being torn down.
+    expect(el.querySelector('section.viewer')).not.toBeNull();
+
     lat.value = '45';
     lat.dispatchEvent(new Event('input'));
     await fixture.whenStable();

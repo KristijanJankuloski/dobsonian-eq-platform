@@ -7,7 +7,12 @@ describe('inputs persistence', () => {
   it('round-trips a form state', () => {
     const value = {
       inputs: { ...DEFAULT_INPUTS, latitudeDeg: -35.5, scopeMassKg: 20 },
-      options: { extraTravelDeg: 30, chordMarginMm: 10, unusedMiddlePercent: 25 },
+      options: {
+        extraTravelDeg: 30,
+        chordMarginMm: 10,
+        unusedMiddlePercent: 20,
+        topBoardThicknessMm: 12,
+      },
     };
     expect(fromQueryParams(toQueryParams(value))).toEqual(value);
   });
@@ -44,10 +49,15 @@ describe('inputs persistence', () => {
   });
 
   it('clamps negative non-negative fields to zero and rejects non-positive widths', () => {
-    const v = parse('b=-5&d=-1&travel=-3&margin=-2&middle=-1&e=0&f=-10')!;
+    const v = parse('b=-5&d=-1&travel=-3&margin=-2&middle=-1&top=-4&e=0&f=-10')!;
     expect(v.inputs.scopeCogHeightMm).toBe(0);
     expect(v.inputs.mountCogHeightMm).toBe(0);
-    expect(v.options).toEqual({ extraTravelDeg: 0, chordMarginMm: 0, unusedMiddlePercent: 0 });
+    expect(v.options).toEqual({
+      extraTravelDeg: 0,
+      chordMarginMm: 0,
+      unusedMiddlePercent: 0,
+      topBoardThicknessMm: 0,
+    });
     expect(v.inputs.mountBaseWidthMm).toBe(DEFAULT_INPUTS.mountBaseWidthMm);
     expect(v.inputs.platformThicknessMm).toBe(DEFAULT_INPUTS.platformThicknessMm);
   });
@@ -66,5 +76,17 @@ describe('inputs persistence', () => {
     const v = parse('a=0')!;
     expect(v.inputs.scopeMassKg).toBe(0);
     expect(v.inputs.mountMassKg).toBe(DEFAULT_INPUTS.mountMassKg);
+  });
+
+  it('clamps the travel and the unused middle to the form limits', () => {
+    expect(parse('travel=340')?.options.extraTravelDeg).toBe(60);
+    expect(parse('middle=95')?.options.unusedMiddlePercent).toBe(80);
+  });
+
+  it('keeps the top board thinner than the platform', () => {
+    expect(parse('f=40&top=50')?.options.topBoardThicknessMm).toBe(18);
+    expect(parse('f=20&top=25')?.options.topBoardThicknessMm).toBe(10);
+    // Older saved links without "top" get the default.
+    expect(parse('lat=45')?.options.topBoardThicknessMm).toBe(DEFAULT_OPTIONS.topBoardThicknessMm);
   });
 });

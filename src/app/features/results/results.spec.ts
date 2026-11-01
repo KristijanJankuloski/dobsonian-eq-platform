@@ -34,6 +34,44 @@ describe('Results', () => {
     expect(el.querySelector('[data-testid="warning"]')).toBeNull();
   });
 
+  it('shows tracking time for the travel, the board depth and the pieces', async () => {
+    await setup();
+    const text = el.textContent!;
+    expect(text).toContain('1.50 h'); // 22.5° / 15.04°/h
+    expect(text).toContain('504.9 mm'); // top board at least the chord P
+    const segments = el.querySelector('[data-testid="card-segments"]')!.textContent!;
+    expect(segments).toContain('Sagitta of the chord');
+    expect(segments).toContain('Board depth needed');
+    expect(segments).toContain('2 (mirrored)');
+    expect(segments).toContain('25.0 %');
+    const g = calculatePlatform(DEFAULT_INPUTS).geometry;
+    expect(segments).toContain(`${g.pieceHeightMm.toFixed(1)} mm`);
+    expect(segments).toContain(`${g.pieceWidthMm.toFixed(1)} mm`);
+  });
+
+  it('labels the pivot rows with S and T', async () => {
+    await setup();
+    const symbols = [...el.querySelectorAll('[data-testid="card-platform"] .symbol')].map(
+      (s) => s.textContent,
+    );
+    expect(symbols).toContain('(S)');
+    expect(symbols).toContain('(T)');
+  });
+
+  it('names the south bearing and north pivot in the southern hemisphere', async () => {
+    await setup({ ...DEFAULT_INPUTS, latitudeDeg: -35 });
+    const text = el.textContent!;
+    expect(text).toContain('South bearing');
+    expect(text).toContain('South circular segment');
+    expect(text).toContain('north pivot');
+    expect(text).not.toContain('North circular segment');
+  });
+
+  it('warns when the segment cannot be built', async () => {
+    await setup({ ...DEFAULT_INPUTS, latitudeDeg: 85 });
+    expect(el.querySelector('[data-testid="warning"]')?.textContent).toContain('cannot be built');
+  });
+
   it('shows the low-latitude warning', async () => {
     await setup({ ...DEFAULT_INPUTS, latitudeDeg: 5 });
     expect(el.querySelector('[data-testid="warning"]')?.textContent).toContain('Latitude');

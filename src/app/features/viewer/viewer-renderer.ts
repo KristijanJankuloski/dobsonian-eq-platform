@@ -9,6 +9,8 @@ export interface ViewerRenderer {
   setClearColor(color: number, alpha?: number): void;
   render(scene: Scene, camera: Camera): void;
   dispose(): void;
+  /** Releases the WebGL context now instead of waiting for garbage collection. */
+  forceContextLoss(): void;
 }
 
 export type ViewerRendererFactory = () => ViewerRenderer;

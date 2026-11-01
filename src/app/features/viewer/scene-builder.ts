@@ -21,7 +21,7 @@ import {
   Vector2,
   Vector3,
 } from 'three';
-import { Box, ViewerModel } from './viewer-model';
+import { Box, ViewerModel } from '@shared/models/platform-model';
 
 /** Theme colours as CSS colour strings. */
 export interface ThemeColors {
@@ -107,8 +107,9 @@ export function disposeObject(object: Object3D): void {
 }
 
 /**
- * Builds the scene objects for a model. Millimetres, x east, y up, z north;
- * see viewer-model.ts for the axis conventions.
+ * Builds the scene objects for a model. Millimetres, right-handed, y up, z
+ * towards the visible pole; see shared/models/platform-model.ts for the axis
+ * conventions.
  */
 export function buildScene(
   model: ViewerModel,
@@ -143,40 +144,40 @@ export function buildScene(
     new ConeGeometry(model.labelHeightMm * 0.8, model.labelHeightMm * 2.4, 16),
     standard(colors.primary),
   );
-  const northLabel = model.labels.find((l) => l.text === 'N');
-  if (northLabel) {
-    marker.rotation.x = Math.PI / 2; // cone tip points north (+z)
+  const poleLabel = model.labels.find((l) => l.pole);
+  if (poleLabel) {
+    marker.rotation.x = Math.PI / 2; // cone tip points to the pole (+z)
     marker.position.set(
-      northLabel.position.x,
+      poleLabel.position.x,
       model.labelHeightMm * 0.5,
-      northLabel.position.z - model.labelHeightMm * 2,
+      poleLabel.position.z - model.labelHeightMm * 2,
     );
     root.add(marker);
   }
 
-  // South pivot bolt: sits on the polar axis, so it stays put while the platform turns.
+  // Pivot bolt: sits on the polar axis, so it stays put while the platform turns.
   const bolt = new Mesh(
     new CylinderGeometry(model.labelHeightMm * 0.3, model.labelHeightMm * 0.3, 60, 16),
     standard(colors.tertiary),
   );
   bolt.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), v3(model.axisDir));
   bolt.position.set(model.pivot.x, model.pivot.y, model.pivot.z);
-  bolt.name = 'south-pivot';
+  bolt.name = 'pivot';
   root.add(bolt);
 
   // Moving parts: segments, top board, mount, telescope, centre of gravity.
   const segmentMaterial = standard(colors.primary);
   const axis = v3(model.axisDir);
   const e2 = v3(model.planeUp);
-  const east = new Vector3(1, 0, 0);
-  const basis = new Matrix4().makeBasis(east, e2, axis);
+  const xAxis = new Vector3(1, 0, 0);
+  const basis = new Matrix4().makeBasis(xAxis, e2, axis);
   for (const seg of model.segments) {
     const shape = new Shape(seg.profile.map((p) => new Vector2(p.a, p.b)));
     const geometry = new ExtrudeGeometry(shape, {
       depth: model.segmentWidthMm,
       bevelEnabled: false,
     });
-    // Centre the board on the segment plane, then map (a, b, depth) to (east, e2, axis).
+    // Centre the board on the segment plane, then map (a, b, depth) to (x, e2, axis).
     geometry.translate(0, 0, -model.segmentWidthMm / 2);
     geometry.applyMatrix4(basis);
     geometry.translate(seg.centre.x, seg.centre.y, seg.centre.z);

@@ -1,7 +1,9 @@
 import {
   DEFAULT_INPUTS,
   DEFAULT_OPTIONS,
+  MAX_EXTRA_TRAVEL_DEG,
   MAX_LATITUDE_DEG,
+  MAX_UNUSED_MIDDLE_PERCENT,
   MIN_LATITUDE_DEG,
 } from '@core/calculator';
 import { PlatformFormValue } from './inputs-form.models';
@@ -17,7 +19,7 @@ import { PlatformFormValue } from './inputs-form.models';
 /** Largest absolute value accepted for any field. Stops absurd input. */
 const MAX_ABS = 1_000_000;
 
-type Rule = 'latitude' | 'nonNegative' | 'positive';
+type Rule = 'latitude' | 'nonNegative' | 'positive' | 'travel' | 'percent';
 
 interface Field {
   /** Short query key; letters match the spec's diagram where possible. */
@@ -35,9 +37,10 @@ const FIELDS: Field[] = [
   field('d', 'nonNegative', 'inputs', 'mountCogHeightMm'),
   field('e', 'positive', 'inputs', 'mountBaseWidthMm'),
   field('f', 'positive', 'inputs', 'platformThicknessMm'),
-  field('travel', 'nonNegative', 'options', 'extraTravelDeg'),
+  field('travel', 'travel', 'options', 'extraTravelDeg'),
   field('margin', 'nonNegative', 'options', 'chordMarginMm'),
-  field('middle', 'nonNegative', 'options', 'unusedMiddlePercent'),
+  field('middle', 'percent', 'options', 'unusedMiddlePercent'),
+  field('top', 'nonNegative', 'options', 'topBoardThicknessMm'),
 ];
 
 function field<G extends 'inputs' | 'options'>(
@@ -84,6 +87,10 @@ function sanitise(rule: Rule, n: number | null, fallback: number): number {
     }
     case 'nonNegative':
       return Math.max(n, 0);
+    case 'travel':
+      return Math.min(Math.max(n, 0), MAX_EXTRA_TRAVEL_DEG);
+    case 'percent':
+      return Math.min(Math.max(n, 0), MAX_UNUSED_MIDDLE_PERCENT);
     case 'positive':
       return n > 0 ? n : fallback;
   }
@@ -103,6 +110,13 @@ export function fromQueryParams(params: URLSearchParams): PlatformFormValue | nu
   if (value.inputs.scopeMassKg + value.inputs.mountMassKg <= 0) {
     value.inputs.scopeMassKg = defaults.inputs.scopeMassKg;
     value.inputs.mountMassKg = defaults.inputs.mountMassKg;
+  }
+  // The top board must be thinner than the platform.
+  if (value.options.topBoardThicknessMm >= value.inputs.platformThicknessMm) {
+    value.options.topBoardThicknessMm = Math.min(
+      defaults.options.topBoardThicknessMm,
+      value.inputs.platformThicknessMm / 2,
+    );
   }
   return value;
 }
