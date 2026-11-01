@@ -30,3 +30,12 @@
   display: grid;
   gap: 16px;
 }
+
+.viewer {
+  grid-column: 1 / -1;
+}
+
+.viewer-loading {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+}
