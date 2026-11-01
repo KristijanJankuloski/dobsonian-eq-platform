@@ -19,7 +19,7 @@ import { PlatformInputs, PlatformResult } from '@core/calculator';
 import { AmbientLight, DirectionalLight, PerspectiveCamera, Scene, Vector3 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { FALLBACK_COLORS, SceneParts, ThemeColors, buildScene } from './scene-builder';
-import { ViewerModel, buildViewerModel } from './viewer-model';
+import { ViewerModel, buildViewerModel } from '@shared/models/platform-model';
 import { VIEWER_RENDERER_FACTORY, ViewerRenderer } from './viewer-renderer';
 
 const REBUILD_DEBOUNCE_MS = 150;
@@ -79,7 +79,7 @@ export class Viewer {
   protected readonly angleDeg = signal(0);
 
   protected readonly halfTravelDeg = computed(
-    () => (this.result()?.geometry.segmentAngleDeg ?? 0) / 2,
+    () => (this.result()?.geometry.trackingTravelDeg ?? 0) / 2,
   );
 
   private renderer: ViewerRenderer | null = null;
@@ -207,6 +207,7 @@ export class Viewer {
     this.controls?.dispose();
     this.parts?.dispose();
     this.renderer?.dispose();
+    this.renderer?.forceContextLoss();
     this.renderer?.domElement.remove();
     this.parts = null;
     this.renderer = null;
@@ -267,7 +268,7 @@ export class Viewer {
     const t = model.camera.target;
     const d = model.camera.distanceMm;
     controls.target.set(t.x, t.y, t.z);
-    // From the south-east and above, looking north.
+    // From the pivot end, off to one side and above, looking towards the pole.
     camera.position.copy(new Vector3(t.x + d * 0.75, t.y + d * 0.55, t.z - d * 0.85));
     camera.far = d * 40;
     camera.updateProjectionMatrix();
@@ -303,7 +304,9 @@ export class Viewer {
     if (!this.playing() || this.destroyed) return;
     const half = this.halfTravelDeg();
     const progress = ((((now - this.animStart) / 1000 / SWEEP_SECONDS) % 1) + 1) % 1;
-    const angle = -half + 2 * half * progress;
+    // Turn the way the platform tracks: against the Earth's rotation.
+    const direction = this.model?.trackingDirection ?? -1;
+    const angle = direction * (-half + 2 * half * progress);
     this.parts?.setTrackingAngle(angle);
     // Not a signal write per frame: the readout follows a few times a second.
     if (now - this.lastReadout > READOUT_INTERVAL_MS) {

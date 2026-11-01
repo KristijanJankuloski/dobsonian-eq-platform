@@ -73,7 +73,8 @@
         label="Extra tracking travel"
         unit="°"
         [min]="0"
-        hint="Added to the base segment angle (about 1.5 h)"
+        [max]="maxTravel"
+        hint="Added to the base segment angle; 15° is about 1 h"
         testId="extra-travel"
       />
       <app-numeric-field
@@ -89,11 +90,24 @@
         label="Unused middle of the segment"
         unit="%"
         [min]="0"
-        [max]="80"
-        hint="Left out so the segment becomes two mirrored pieces (1/3 or 1/4). 0 keeps one piece."
+        [max]="maxMiddle"
+        hint="Left out so the segment becomes two mirrored pieces. 0 keeps one piece. Reduced when the pieces would not cover the travel."
         testId="unused-middle"
       />
+      <app-numeric-field
+        [control]="form.controls.topBoardThicknessMm"
+        label="Top board thickness"
+        unit="mm"
+        [min]="0"
+        hint="The segment's flat edge goes against its underside"
+        testId="top-board"
+      />
     </div>
+    @if (form.hasError('topBoard')) {
+      <p class="error" role="alert" data-testid="top-board-error">
+        The top board must be thinner than the platform thickness (F).
+      </p>
+    }
   </mat-expansion-panel>
 
   <div class="actions">

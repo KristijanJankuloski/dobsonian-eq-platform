@@ -1,5 +1,5 @@
 import { DEFAULT_INPUTS, DEFAULT_OPTIONS, calculatePlatform } from '@core/calculator';
-import { buildPlatformPlan, buildSegmentTemplate } from './plan-svg';
+import { PLAN_CLASS, TEMPLATE_CLASS, buildPlatformPlan, buildSegmentTemplate } from './plan-svg';
 
 const split = calculatePlatform(DEFAULT_INPUTS);
 const whole = calculatePlatform(DEFAULT_INPUTS, { ...DEFAULT_OPTIONS, unusedMiddlePercent: 0 });
@@ -24,7 +24,30 @@ describe('buildSegmentTemplate', () => {
     const outer = (g.pieceOuterAngleDeg * Math.PI) / 180;
     expect(t.widthMm).toBeCloseTo(g.northRadiusMm * (Math.sin(outer) - Math.sin(inner)), 1);
     expect(t.heightMm).toBeCloseTo(g.pieceHeightMm, 1);
+    expect(t.widthMm).toBeCloseTo(g.pieceWidthMm, 1);
     expect(t.svg).toContain('flip the template over');
+    expect(t.svg).toContain('underside of the 18 mm top board');
+  });
+
+  it('scopes its styles to its own root, so inline previews do not restyle the page', () => {
+    for (const svg of [buildSegmentTemplate(split).svg, buildPlatformPlan(DEFAULT_INPUTS, split)]) {
+      const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
+      const root = doc.documentElement.getAttribute('class')!;
+      expect([TEMPLATE_CLASS, PLAN_CLASS]).toContain(root);
+      const css = doc.querySelector('style')!.textContent!;
+      const selectors = css
+        .split('}')
+        .map((rule) => rule.split('{')[0].trim())
+        .filter(Boolean);
+      expect(selectors.length).toBeGreaterThan(0);
+      for (const sel of selectors) expect(sel.startsWith(`.${root} `)).toBe(true);
+    }
+  });
+
+  it('names the south segment in the southern hemisphere', () => {
+    const t = buildSegmentTemplate(split, -35);
+    expect(t.pole).toBe('South');
+    expect(t.svg).toContain('South segment template');
   });
 
   it('is one whole segment when no middle is left out', () => {
@@ -47,6 +70,15 @@ describe('buildPlatformPlan', () => {
     expect(doc.querySelectorAll('rect.cut').length).toBe(2);
     expect(doc.querySelector('circle.pivot')).not.toBeNull();
     expect(svg).toContain('pivot to north bearing 536.42 mm');
+    expect(svg).toContain('south pivot');
+  });
+
+  it('swaps the pole and pivot names in the southern hemisphere', () => {
+    const inputs = { ...DEFAULT_INPUTS, latitudeDeg: -50.7279 };
+    const svg = buildPlatformPlan(inputs, calculatePlatform(inputs));
+    expect(svg).toContain('north pivot');
+    expect(svg).toContain('pivot to south bearing');
+    expect(svg).toContain('>S</text>');
   });
 
   it('draws one rectangle for a whole segment', () => {

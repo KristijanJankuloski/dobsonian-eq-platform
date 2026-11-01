@@ -12,6 +12,7 @@ function fakeRenderer() {
     setClearColor: vi.fn(),
     render: vi.fn(),
     dispose: vi.fn(),
+    forceContextLoss: vi.fn(),
   };
   return renderer satisfies ViewerRenderer;
 }
@@ -66,6 +67,7 @@ describe('Viewer', () => {
     await setup();
     fixture.destroy();
     expect(renderer.dispose).toHaveBeenCalled();
+    expect(renderer.forceContextLoss).toHaveBeenCalled();
     expect(renderer.domElement.isConnected).toBe(false);
   });
 
@@ -109,6 +111,20 @@ describe('Viewer', () => {
     el.querySelector<HTMLButtonElement>('[data-testid="toggle-wireframe"] button')!.click();
     await fixture.whenStable();
     await vi.waitFor(() => expect(renderer.render.mock.calls.length).toBeGreaterThan(before));
+  });
+
+  it('limits the tracking slider to half the extra travel either side', async () => {
+    await setup();
+    const thumb = el.querySelector<HTMLInputElement>('[data-testid="angle-slider"]')!;
+    expect(Number(thumb.min)).toBeCloseTo(-11.25, 6);
+    expect(Number(thumb.max)).toBeCloseTo(11.25, 6);
+  });
+
+  it('sizes the canvas to its host with CSS, whatever the pixel ratio', async () => {
+    await setup();
+    const style = getComputedStyle(renderer.domElement);
+    expect(style.width).toBe('100%');
+    expect(style.height).toBe('100%');
   });
 
   it('plays the tracking animation and stops on pause', async () => {

@@ -43,6 +43,35 @@ describe('InputsForm', () => {
     expect(fixture.componentInstance.value()).toBeNull();
   });
 
+  it('says which latitude limit was broken', async () => {
+    await type('latitude', '95');
+    field('latitude').dispatchEvent(new Event('blur'));
+    await fixture.whenStable();
+    expect(el.textContent).toContain('Must be at most 89');
+    await type('latitude', '0.5');
+    expect(el.textContent).toContain('Must be at least 1');
+  });
+
+  it('rejects an extra travel above the limit', async () => {
+    await type('extra-travel', '340');
+    expect(fixture.componentInstance.value()).toBeNull();
+  });
+
+  it('opens the Advanced panel when one of its fields is invalid', async () => {
+    const panel = () => el.querySelector('mat-expansion-panel')!;
+    expect(panel().classList).not.toContain('mat-expanded');
+    await type('unused-middle', '95');
+    expect(panel().classList).toContain('mat-expanded');
+  });
+
+  it('requires the top board to be thinner than the platform', async () => {
+    await type('top-board', '75');
+    expect(fixture.componentInstance.value()).toBeNull();
+    expect(el.querySelector('[data-testid="top-board-error"]')).not.toBeNull();
+    await type('top-board', '12');
+    expect(fixture.componentInstance.value()?.options.topBoardThicknessMm).toBe(12);
+  });
+
   it('accepts a negative (southern) latitude', async () => {
     await type('latitude', '-35');
     expect(fixture.componentInstance.value()?.inputs.latitudeDeg).toBe(-35);

@@ -1,4 +1,4 @@
-import { Component, effect, inject, model } from '@angular/core';
+import { Component, effect, inject, model, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -10,10 +10,11 @@ import {
   Validators,
 } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatExpansionModule } from '@angular/material/expansion';
+import { MatExpansionModule, MatExpansionPanel } from '@angular/material/expansion';
 import {
   DEFAULT_INPUTS,
   DEFAULT_OPTIONS,
+  MAX_EXTRA_TRAVEL_DEG,
   MAX_LATITUDE_DEG,
   MIN_LATITUDE_DEG,
   MAX_UNUSED_MIDDLE_PERCENT,
@@ -33,6 +34,31 @@ const totalMass: ValidatorFn = (group: AbstractControl): ValidationErrors | null
   return scope + mount > 0 ? null : { totalMass: true };
 };
 
+/** The segment hangs under the top board, so the board must be thinner than the platform. */
+const topBoardThinner: ValidatorFn = (group: AbstractControl): ValidationErrors | null => {
+  const board = Number(group.get('topBoardThicknessMm')?.value);
+  const platform = Number(group.get('platformThicknessMm')?.value);
+  return !Number.isFinite(board) || !Number.isFinite(platform) || board < platform
+    ? null
+    : { topBoard: true };
+};
+
+/** Absolute latitude between the limits; a negative (southern) latitude is allowed. */
+const latitude: ValidatorFn = (c) => {
+  const v = Math.abs(Number(c.value));
+  if (v < MIN_LATITUDE_DEG) return { min: { min: MIN_LATITUDE_DEG } };
+  if (v > MAX_LATITUDE_DEG) return { max: { max: MAX_LATITUDE_DEG } };
+  return null;
+};
+
+/** Controls inside the collapsed Advanced panel. */
+const ADVANCED = [
+  'extraTravelDeg',
+  'chordMarginMm',
+  'unusedMiddlePercent',
+  'topBoardThicknessMm',
+] as const;
+
 const positive: ValidatorFn = (c) =>
   typeof c.value === 'number' && c.value > 0 ? null : { exclusiveMin: { min: 0 } };
 
@@ -49,6 +75,10 @@ export class InputsForm {
 
   protected readonly minLatitude = MIN_LATITUDE_DEG;
   protected readonly maxLatitude = MAX_LATITUDE_DEG;
+  protected readonly maxTravel = MAX_EXTRA_TRAVEL_DEG;
+  protected readonly maxMiddle = MAX_UNUSED_MIDDLE_PERCENT;
+
+  private readonly advancedPanel = viewChild(MatExpansionPanel);
 
   /** The current form state, or null while the form is invalid. */
   readonly value = model<PlatformFormValue | null>(null);
@@ -56,15 +86,7 @@ export class InputsForm {
   protected readonly form = new FormGroup(
     {
       // Absolute value is used, so a negative (southern) latitude is allowed.
-      latitudeDeg: this.numberControl(this.initial.inputs.latitudeDeg, [
-        finite,
-        (c) => {
-          const v = Math.abs(Number(c.value));
-          return v >= MIN_LATITUDE_DEG && v <= MAX_LATITUDE_DEG
-            ? null
-            : { min: { min: MIN_LATITUDE_DEG } };
-        },
-      ]),
+      latitudeDeg: this.numberControl(this.initial.inputs.latitudeDeg, [finite, latitude]),
       scopeMassKg: this.numberControl(this.initial.inputs.scopeMassKg, [finite, Validators.min(0)]),
       scopeCogHeightMm: this.numberControl(this.initial.inputs.scopeCogHeightMm, [
         finite,
@@ -86,6 +108,7 @@ export class InputsForm {
       extraTravelDeg: this.numberControl(this.initial.options.extraTravelDeg, [
         finite,
         Validators.min(0),
+        Validators.max(MAX_EXTRA_TRAVEL_DEG),
       ]),
       chordMarginMm: this.numberControl(this.initial.options.chordMarginMm, [
         finite,
@@ -96,8 +119,12 @@ export class InputsForm {
         Validators.min(0),
         Validators.max(MAX_UNUSED_MIDDLE_PERCENT),
       ]),
+      topBoardThicknessMm: this.numberControl(this.initial.options.topBoardThicknessMm, [
+        finite,
+        Validators.min(0),
+      ]),
     },
-    { validators: totalMass },
+    { validators: [totalMass, topBoardThinner] },
   );
 
   private readonly formValue = toSignal(this.form.valueChanges, {
@@ -111,6 +138,19 @@ export class InputsForm {
       this.value.set(value);
       if (value) this.store.save(value);
     });
+
+    // An error inside the collapsed Advanced panel would otherwise be hidden.
+    effect(() => {
+      this.formValue();
+      const panel = this.advancedPanel();
+      if (panel && this.advancedInvalid()) panel.open();
+    });
+  }
+
+  private advancedInvalid(): boolean {
+    return (
+      ADVANCED.some((name) => this.form.controls[name].invalid) || this.form.hasError('topBoard')
+    );
   }
 
   protected reset(): void {
@@ -137,6 +177,7 @@ export class InputsForm {
         extraTravelDeg: v.extraTravelDeg!,
         chordMarginMm: v.chordMarginMm!,
         unusedMiddlePercent: v.unusedMiddlePercent!,
+        topBoardThicknessMm: v.topBoardThicknessMm!,
       },
     };
   }

@@ -86,6 +86,7 @@ export class Drive {
       motorRph: v.motorRph,
       shaftDiameterMm: v.shaftDiameterMm,
       northRadiusMm: radius,
+      siderealCorrection: v.siderealCorrection,
     });
   });
 

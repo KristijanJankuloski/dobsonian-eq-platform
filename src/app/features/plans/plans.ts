@@ -20,7 +20,14 @@ export class Plans {
   readonly inputs = input.required<PlatformInputs>();
   readonly result = input.required<PlatformResult>();
 
-  protected readonly template = computed(() => buildSegmentTemplate(this.result()));
+  /** False when the segment cannot be built; the drawings are not offered then. */
+  protected readonly fits = computed(() => this.result().checks.segmentFits);
+  protected readonly template = computed(() =>
+    buildSegmentTemplate(this.result(), this.inputs().latitudeDeg),
+  );
+  protected readonly templateFile = computed(
+    () => `${this.template().pole.toLowerCase()}-segment-template-1to1.svg`,
+  );
   protected readonly plan = computed(() => buildPlatformPlan(this.inputs(), this.result()));
 
   // The SVG is built by this app from numbers only, so it is safe to inline.
@@ -32,7 +39,7 @@ export class Plans {
   );
 
   protected saveTemplate(): void {
-    this.download.save('north-segment-template-1to1.svg', this.template().svg);
+    this.download.save(this.templateFile(), this.template().svg);
   }
 
   protected savePlan(): void {

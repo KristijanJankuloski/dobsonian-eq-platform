@@ -1,6 +1,6 @@
 import { Component, computed, signal } from '@angular/core';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { calculatePlatform } from '@core/calculator';
+import { calculatePlatform, hemisphereNames } from '@core/calculator';
 import { Drive } from './features/drive/drive';
 import { InputsForm } from './features/inputs-form/inputs-form';
 import { PlatformFormValue } from './features/inputs-form/inputs-form.models';
@@ -25,6 +25,10 @@ export class App {
   protected readonly formValue = signal<PlatformFormValue | null>(null);
 
   protected readonly inputs = computed(() => this.formValue()?.inputs ?? null);
+
+  protected readonly sketchTitle = computed(
+    () => `${hemisphereNames(this.inputs()?.latitudeDeg ?? 1).pole} segment`,
+  );
 
   protected readonly northRadiusMm = computed(() => this.result()?.geometry.northRadiusMm ?? null);
 

@@ -1,37 +1,54 @@
-<mat-card appearance="outlined" data-testid="card-template">
-  <mat-card-header>
-    <h2 mat-card-title>1:1 segment template</h2>
-  </mat-card-header>
-  <mat-card-content>
-    <div class="drawing" [innerHTML]="templateHtml()"></div>
-    <p class="note">
-      {{
-        template().pieces === 2
-          ? 'Two pieces: cut one, flip the template over for the other.'
-          : 'One whole segment.'
-      }}
-      Size {{ template().widthMm.toFixed(1) }} × {{ template().heightMm.toFixed(1) }} mm. Print the
-      SVG at 100 % scale (or send it to a print shop or CNC); check the 100 mm bar.
-    </p>
-  </mat-card-content>
-  <mat-card-actions align="end">
-    <button mat-button type="button" (click)="saveTemplate()" data-testid="download-template">
-      Download template (SVG)
-    </button>
-  </mat-card-actions>
-</mat-card>
+@if (!fits()) {
+  <mat-card appearance="outlined" data-testid="card-template">
+    <mat-card-header>
+      <h2 mat-card-title>Plans and template</h2>
+    </mat-card-header>
+    <mat-card-content>
+      <p class="note" role="status" data-testid="plans-unavailable">
+        The segment cannot be built with these inputs, so no template or plan is offered. See the
+        warning in the results.
+      </p>
+    </mat-card-content>
+  </mat-card>
+} @else {
+  <mat-card appearance="outlined" data-testid="card-template">
+    <mat-card-header>
+      <h2 mat-card-title>1:1 segment template</h2>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="drawing" [innerHTML]="templateHtml()"></div>
+      <p class="note">
+        {{
+          template().pieces === 2
+            ? 'Two pieces: cut one, flip the template over for the other.'
+            : 'One whole segment.'
+        }}
+        Size {{ template().widthMm.toFixed(1) }} × {{ template().heightMm.toFixed(1) }} mm. Print
+        the SVG at 100 % scale (or send it to a print shop or CNC); check the 100 mm bar.
+      </p>
+    </mat-card-content>
+    <mat-card-actions align="end">
+      <button mat-button type="button" (click)="saveTemplate()" data-testid="download-template">
+        Download template (SVG)
+      </button>
+    </mat-card-actions>
+  </mat-card>
 
-<mat-card appearance="outlined" data-testid="card-plan">
-  <mat-card-header>
-    <h2 mat-card-title>Platform plan</h2>
-  </mat-card-header>
-  <mat-card-content>
-    <div class="drawing" [innerHTML]="planHtml()"></div>
-    <p class="note">View from above with north at the top, at 1:1 scale when downloaded.</p>
-  </mat-card-content>
-  <mat-card-actions align="end">
-    <button mat-button type="button" (click)="savePlan()" data-testid="download-plan">
-      Download plan (SVG)
-    </button>
-  </mat-card-actions>
-</mat-card>
+  <mat-card appearance="outlined" data-testid="card-plan">
+    <mat-card-header>
+      <h2 mat-card-title>Platform plan</h2>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="drawing" [innerHTML]="planHtml()"></div>
+      <p class="note">
+        View from above with {{ template().pole.toLowerCase() }} at the top, at 1:1 scale when
+        downloaded.
+      </p>
+    </mat-card-content>
+    <mat-card-actions align="end">
+      <button mat-button type="button" (click)="savePlan()" data-testid="download-plan">
+        Download plan (SVG)
+      </button>
+    </mat-card-actions>
+  </mat-card>
+}

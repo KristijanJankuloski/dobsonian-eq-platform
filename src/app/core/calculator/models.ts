@@ -25,9 +25,16 @@ export interface PlatformOptions {
   /**
    * Share of the segment arc, in percent, that is left out of the middle
    * because it is not used (Vogel). The rest is two mirrored end pieces.
-   * Default 33.3 (one third); 0 keeps one whole segment. Limited to 0–80.
+   * Default 25; 0 keeps one whole segment. Limited to 0–80, and reduced
+   * further when needed so each piece still covers the whole travel.
    */
   unusedMiddlePercent: number;
+  /**
+   * Thickness of the top board the segment hangs from, mm. Default 18.
+   * The segment's flat edge sits against the board's underside, so this is
+   * taken off the segment height. Must be less than F.
+   */
+  topBoardThicknessMm: number;
 }
 
 /** Core geometry results (SPEC §4.2). Letters match the Sky at Night diagram. */
@@ -48,13 +55,22 @@ export interface PlatformGeometry {
   segmentAngleDeg: number;
   /** P: chord length of north segment, mm. */
   northChordMm: number;
+  /** Extra tracking travel used (O − N), degrees. */
+  trackingTravelDeg: number;
+  /**
+   * Unused middle actually applied, percent of O. Lower than the option when
+   * a larger gap would leave the pieces shorter than the travel.
+   */
+  unusedMiddlePercent: number;
   /** Half the gap angle: where each end piece starts, measured from the centre line, degrees. */
   pieceInnerAngleDeg: number;
   /** Where each end piece ends (O / 2), degrees. */
   pieceOuterAngleDeg: number;
-  /** Width of one end piece measured across the platform, including the chord margin, mm. */
+  /** Distance from the polar axis to the segment's flat edge (underside of the top board), mm. */
+  segmentFlatEdgeMm: number;
+  /** Length of one piece's flat edge (the whole segment's when nothing is left out), mm. */
   pieceWidthMm: number;
-  /** Largest height of an end piece, from the flat edge to the arc, mm. */
+  /** Board depth needed: largest height of a piece from its flat edge to the arc, mm. */
   pieceHeightMm: number;
   /** Distance from origin to the south pivot (polar axis meets platform plane), mm. */
   southPivotDistanceMm: number;
@@ -62,7 +78,7 @@ export interface PlatformGeometry {
   pivotToNorthBearingMm: number;
 }
 
-export type WarningCode = 'lowLatitude';
+export type WarningCode = 'lowLatitude' | 'segmentDoesNotFit';
 
 export interface PlatformWarning {
   code: WarningCode;
@@ -71,16 +87,24 @@ export interface PlatformWarning {
 
 /** Non-blocking sanity checks (SPEC §4.4). */
 export interface PlatformChecks {
-  /** Sagitta of the north segment, mm: board depth needed. */
+  /** Sagitta of the chord P on the circle of radius I, mm (SPEC §4.4.1). */
   northSagittaMm: number;
-  /** Recommended minimum top-board width, mm (E + I/4). */
+  /** Recommended minimum top-board width, mm: the larger of E + I/4 and the chord P. */
   minTopBoardWidthMm: number;
-  /** Total tracking time in hours for the segment angle O. */
+  /** Total tracking time in hours for the extra tracking travel (O − N). */
   trackingHours: number;
+  /**
+   * False when the segment cannot be built: the polar axis is not above the
+   * platform's underside, or the arc ends do not reach below the flat edge.
+   * The template and plan are not offered then.
+   */
+  segmentFits: boolean;
   warnings: PlatformWarning[];
 }
 
 export interface PlatformResult {
+  /** The options the result was calculated with. */
+  options: PlatformOptions;
   geometry: PlatformGeometry;
   checks: PlatformChecks;
 }
@@ -109,6 +133,8 @@ export interface DirectDriveInputs {
   shaftDiameterMm: number;
   /** North radius I from the core geometry, for the comparison. */
   northRadiusMm: number;
+  /** Use the sidereal day (1436 min, default) instead of 24 h (1440 min). */
+  siderealCorrection?: boolean;
 }
 
 export interface DirectDriveResult {

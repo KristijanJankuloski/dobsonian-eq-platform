@@ -1,25 +1,30 @@
-import { PlatformInputs, PlatformResult } from '@core/calculator';
+import { PlatformInputs, PlatformResult, hemisphereNames } from '@core/calculator';
+import { toRad } from '@core/util/math';
 
 /**
- * Pure geometry for the 3D view (SPEC §7). No three.js imports, so the maths
- * can be unit tested without WebGL.
+ * Pure geometry of the built platform, shared by the 3D view (SPEC §7) and
+ * the plan drawing. No three.js imports, so the maths can be unit tested
+ * without WebGL.
  *
- * Axis conventions (millimetres, right-handed, as in the Sky at Night diagram):
- *   x = east, y = up, z = north. The ground board's top surface is y = 0.
- *   The origin is where the polar axis crosses the ground plane (y = 0).
- *   The polar axis points up and north: u = (0, sin α, cos α).
- *   The single north bearing contact point lies on the ground line at z = H
- *   (SPEC §4.2), directly under the mount's north edge. The platform's top
- *   plane is at y = F, where the mount sits. At the south end the platform
- *   turns on a pivot where the polar axis crosses that plane, at
- *   (0, F, F / tan α) (Reiner Vogel's design).
+ * Axis conventions (millimetres, right-handed like three.js):
+ *   y = up, z = towards the visible celestial pole (north in the northern
+ *   hemisphere, south in the southern), x = y × z, which is west in the
+ *   northern hemisphere and east in the southern.
+ *   The ground board's top surface is y = 0. The origin is where the polar
+ *   axis crosses the ground plane (y = 0). The polar axis points up and
+ *   towards the pole: u = (0, sin α, cos α).
+ *   The bearing contact point lies on the ground line at z = H (SPEC §4.2),
+ *   directly under the mount's pole-side edge. The platform's top plane is
+ *   at y = F, where the mount sits. At the other end the platform turns on a
+ *   pivot where the polar axis crosses that plane, at (0, F, F / tan α)
+ *   (Reiner Vogel's design).
  *
  * The bearing segment lives in a plane perpendicular to the polar axis,
- * centred on the axis, with its curved edge at radius I
- * and its flat edge on the platform plane. In that plane, `a` runs east and
- * `b` runs along e2 = (0, cos α, −sin α); the circle's lowest point is at
- * (a, b) = (0, −radius), where it touches the ground line.
- * The flat edge is at b = −(radius − L), with L = F / cos α (SPEC §4.2).
+ * centred on the axis, with its curved edge at radius I and its flat edge
+ * against the underside of the top board. In that plane, `a` runs along x
+ * and `b` runs along e2 = (0, cos α, −sin α); the circle's lowest point is
+ * at (a, b) = (0, −radius), where it touches the ground line. The flat edge
+ * is at b = −(M + t / cos α), with t the top-board thickness (SPEC §4.2).
  */
 
 export interface Vec3 {
@@ -34,15 +39,13 @@ export interface Point2 {
 }
 
 export interface SegmentModel {
-  /** 'north' for one whole segment, else one of the two mirrored end pieces. */
-  id: 'north' | 'north-east' | 'north-west';
+  /** 'whole' for one whole segment, else one of the two mirrored end pieces. */
+  id: 'whole' | 'piece-east' | 'piece-west';
   radiusMm: number;
   /** Centre of the segment's circle, on the polar axis. */
   centre: Vec3;
   /** Closed outline in the (a, b) plane: flat top edge, then the arc. */
   profile: Point2[];
-  /** Ground contact point (lowest point of the arc). */
-  contact: Vec3;
 }
 
 export interface Box {
@@ -54,6 +57,8 @@ export interface LabelModel {
   /** Short text drawn on a sprite. */
   text: string;
   position: Vec3;
+  /** Marks the pole-direction label, which also gets a compass cone. */
+  pole?: boolean;
 }
 
 export interface ViewerModel {
@@ -66,7 +71,7 @@ export interface ViewerModel {
   /** South pivot: the polar axis where it crosses the platform plane. */
   pivot: Vec3;
   /** Segments that cannot be drawn, with the reason. */
-  skipped: { id: 'north'; reason: string }[];
+  skipped: { id: 'segment'; reason: string }[];
   /** Axial thickness of a segment board, mm. */
   segmentWidthMm: number;
   groundBoard: Box;
@@ -77,8 +82,14 @@ export interface ViewerModel {
   /** Combined centre of gravity, on the polar axis. */
   cog: Vec3;
   axis: { from: Vec3; to: Vec3 };
-  /** Half of the segment angle O: the tracking travel either side of centre. */
+  /** Half of the extra tracking travel: how far the platform turns either side of centre. */
   halfTravelDeg: number;
+  /**
+   * Sign of the tracking rotation about +axisDir as time goes on: the
+   * platform turns against the Earth's rotation, so −1 in the northern
+   * hemisphere (axis to the north pole) and +1 in the southern.
+   */
+  trackingDirection: 1 | -1;
   labels: LabelModel[];
   camera: { target: Vec3; distanceMm: number };
   /** Size of a label sprite's height, mm. */
@@ -87,11 +98,9 @@ export interface ViewerModel {
 
 /** Axial thickness of the bearing segment boards (plywood), mm. */
 export const SEGMENT_WIDTH_MM = 18;
-/** Thickness of the ground and top boards, mm. */
+/** Thickness of the ground board, mm. */
 export const BOARD_THICKNESS_MM = 18;
 const ARC_STEPS = 48;
-
-const toRad = (deg: number): number => (deg * Math.PI) / 180;
 
 const scale = (v: Vec3, s: number): Vec3 => ({ x: v.x * s, y: v.y * s, z: v.z * s });
 
@@ -175,35 +184,46 @@ export function buildViewerModel(inputs: PlatformInputs, result: PlatformResult)
   const zEnd = H + boardMargin;
   const zCentre = (zStart + zEnd) / 2;
 
+  const names = hemisphereNames(inputs.latitudeDeg);
+  const south = inputs.latitudeDeg < 0;
   const segments: SegmentModel[] = [];
   const skipped: ViewerModel['skipped'] = [];
   const radius = g.northRadiusMm;
-  const topDistance = radius - g.segmentHeightMm;
+  const topDistance = g.segmentFlatEdgeMm;
   const whole = g.pieceInnerAngleDeg === 0;
+  // +x is west in the northern hemisphere and east in the southern.
+  const eastSide: 1 | -1 = south ? 1 : -1;
   const pieces = whole
-    ? [{ id: 'north' as const, profile: segmentProfile(radius, topDistance, g.segmentAngleDeg) }]
+    ? [{ id: 'whole' as const, profile: segmentProfile(radius, topDistance, g.segmentAngleDeg) }]
     : [
         {
-          id: 'north-east' as const,
-          profile: pieceProfile(radius, topDistance, g.pieceInnerAngleDeg, g.pieceOuterAngleDeg, 1),
-        },
-        {
-          id: 'north-west' as const,
+          id: 'piece-east' as const,
           profile: pieceProfile(
             radius,
             topDistance,
             g.pieceInnerAngleDeg,
             g.pieceOuterAngleDeg,
-            -1,
+            eastSide,
+          ),
+        },
+        {
+          id: 'piece-west' as const,
+          profile: pieceProfile(
+            radius,
+            topDistance,
+            g.pieceInnerAngleDeg,
+            g.pieceOuterAngleDeg,
+            -eastSide as 1 | -1,
           ),
         },
       ];
   for (const piece of pieces) {
-    if (!piece.profile) {
+    if (!piece.profile || !result.checks.segmentFits) {
       skipped.push({
-        id: 'north',
-        reason: 'The north segment cannot be drawn: its height is too large for its radius.',
+        id: 'segment',
+        reason: `The ${names.pole.toLowerCase()} segment cannot be drawn: its height is too large for its radius.`,
       });
+      segments.length = 0;
       break;
     }
     segments.push({
@@ -211,13 +231,13 @@ export function buildViewerModel(inputs: PlatformInputs, result: PlatformResult)
       radiusMm: radius,
       centre: scale(axisDir, H * cosA),
       profile: piece.profile,
-      contact: { x: 0, y: 0, z: H },
     });
   }
 
-  const boardWidth = Math.max(result.checks.minTopBoardWidthMm, g.northChordMm, E);
+  const boardWidth = Math.max(result.checks.minTopBoardWidthMm, E);
   const boardLength = zEnd - zStart;
-  const boardT = Math.min(BOARD_THICKNESS_MM, F);
+  // A 0 mm board is still drawn as a thin sheet so the platform stays visible.
+  const boardT = Math.max(Math.min(result.options.topBoardThicknessMm, F), 1);
 
   const groundBoard: Box = {
     centre: { x: 0, y: -BOARD_THICKNESS_MM / 2, z: zCentre },
@@ -247,12 +267,15 @@ export function buildViewerModel(inputs: PlatformInputs, result: PlatformResult)
   const sceneSize = Math.max(H + E, 2 * (F + inputs.scopeCogHeightMm), boardWidth);
   const labelHeightMm = sceneSize / 28;
   const labels: LabelModel[] = [
-    { text: 'N', position: { x: 0, y: labelHeightMm, z: H + E * 0.9 } },
+    { text: names.poleLetter, position: { x: 0, y: labelHeightMm, z: H + E * 0.9 }, pole: true },
     {
       text: `α ${Math.abs(inputs.latitudeDeg).toFixed(1)}°`,
       position: add(scale(axisDir, -labelHeightMm * 2), { x: 0, y: -labelHeightMm, z: 0 }),
     },
-    { text: 'S pivot', position: add(pivot, { x: 0, y: labelHeightMm, z: -labelHeightMm }) },
+    {
+      text: `${names.equatorLetter} pivot`,
+      position: add(pivot, { x: 0, y: labelHeightMm, z: -labelHeightMm }),
+    },
     { text: 'C of G', position: add(cog, { x: 0, y: labelHeightMm, z: 0 }) },
   ];
   if (segments.length) {
@@ -276,7 +299,8 @@ export function buildViewerModel(inputs: PlatformInputs, result: PlatformResult)
     tube,
     cog,
     axis: { from: scale(axisDir, -labelHeightMm), to: scale(axisDir, cogS + tubeLength * 0.6) },
-    halfTravelDeg: g.segmentAngleDeg / 2,
+    halfTravelDeg: g.trackingTravelDeg / 2,
+    trackingDirection: south ? 1 : -1,
     labels,
     camera: {
       target: { x: 0, y: (F + inputs.scopeCogHeightMm) * 0.45, z: zCentre },

@@ -43,7 +43,7 @@ Units: millimetres, kilograms, degrees. Trig functions take radians internally. 
 | C | Weight of mount / rocker box | kg | 9.4 | |
 | D | Height of mount / box centre of gravity above ground | mm | 225 | Found by balancing the box on its side |
 | E | Width of mount base board (ground-board feet) | mm | 330 | |
-| F | Platform thickness (gap for the segments) | mm | 75 | Default 75, user-adjustable |
+| F | Platform thickness (gap for the segments) | mm | 75 | Default 75, user-adjustable. Ground to the top surface of the top board. |
 
 ### 4.2 Core geometry
 
@@ -60,17 +60,23 @@ O  = N + 22.5°                          angle of segment including travel exten
 P  = 2 · I · sin(O/2) + 30              chord length of north segment
 S  = F / tan(α)                         distance from origin to the south pivot
 T  = H − S                              south pivot to north bearing
-Split (m = unused middle, default 33.3 %):
-     inner angle = m · O/2, outer angle = O/2   (each side of the centre line)
+Split (m = unused middle, default 25 %, travel = extra tracking travel):
+     outer angle = O/2 = N/2 + travel/2         (each side of the centre line)
+     inner angle = min(m · O/2, max(0, (N − travel)/2))
      two mirrored end pieces, each from the inner to the outer angle
-     piece width = I · (sin(O/2) − sin(inner)) + 30
+Template (t = top-board thickness, default 18 mm):
+     flat edge   = M + t / cos(α)               distance from the axis to the underside of the top board
+     piece width = I · (sin(O/2) − sin(inner))  (2 · I · sin(O/2) for one whole segment)
+     board depth = I · cos(inner) − flat edge   height of the piece, the stock depth needed
 ```
 
 Notes:
 - The "origin" is the point on the line marking the bottom of the mount (top of the platform) where the polar axis, drawn at angle α, crosses it. The geometry is a side-view construction; the combined C of G sits on the polar axis. See the Sky at Night geometry diagram.
-- N is the angle subtended by the mount base width at the north radius. O adds 22.5° (≈ 1.5 h of sidereal travel at 15°/h) of extension. Make the 22.5° a configurable "extra tracking travel" parameter, defaulting to 22.5°.
+- N is the angle subtended by the mount base width at the north radius. O adds 22.5° (≈ 1.5 h of sidereal travel at 15°/h) of extension. Make the 22.5° a configurable "extra tracking travel" parameter, defaulting to 22.5°, range 0–60°.
 - The `+ 30` in P is a 30 mm allowance added by the source spreadsheet to the chord. Make it a configurable "chord margin", default 30 mm.
-- **Split segment.** Only the ends of the arc touch the rollers or pads, so the middle third (or quarter) is left out and the segment becomes two identical pieces, one the mirror of the other (Vogel). "Unused middle" is an advanced option, default 33.3 %, range 0–80 %; 0 keeps one whole segment.
+- **Split segment.** Only the ends of the arc touch the rollers or pads, so the middle is left out and the segment becomes two identical pieces, one the mirror of the other (Vogel). "Unused middle" is an advanced option, default 25 %, range 0–80 %; 0 keeps one whole segment.
+- **Pieces must cover the travel.** A roller sits under each end of the mount base, at N/2 from the centre line, and rolls over ±travel/2 as the platform turns. So each piece must reach from N/2 − travel/2 to N/2 + travel/2 = O/2. The unused middle is an upper limit: the inner angle is reduced to (N − travel)/2 when the requested gap is larger, and the segment stays whole when travel ≥ N. With the defaults the largest possible gap is (N − travel)/O = 27.1 %, so the earlier one-third default left each piece 1.9° short of the travel.
+- **Top board.** The segment hangs from the underside of the top board, so its flat edge is t / cos α further from the axis than the platform top (M). "Top-board thickness" is an advanced option, default 18 mm, and must be less than F. With t = 0 the flat edge is at M, as in the spreadsheet.
 - The spreadsheet's name for L is "height of North bearing segment" and for M is "polar axis to platform (north bearing plane)".
 
 ### 4.3 Reference output (defaults above)
@@ -85,10 +91,11 @@ N 39.249°   O 61.749°   P 504.925
 
 Shown as non-blocking warnings:
 
-1. **Bearing chord vs. height.** For a given chord `c` and radius `R`, the sagitta is `R − sqrt(R² − (c/2)²)`. Show this for the north segment so the user knows the stock board depth needed.
-2. **Platform width.** The platform must be wide enough for the ground-board feet plus roughly one hour of travel each side. Rule of thumb from the source: at least `E` plus about `I/4`. Show the recommended minimum top-board width.
-3. **Tracking duration.** Total travel time = `O / 15.04°/h` (sidereal). Display it.
+1. **Bearing chord vs. height.** For a given chord `c` and radius `R`, the sagitta is `R − sqrt(R² − (c/2)²)`. Show it for the chord P. It is not the board depth: the flat edge sits on the platform plane, above the chord, so the stock depth needed is the template's board depth (§4.2), which is shown as well.
+2. **Platform width.** The platform must be wide enough for the ground-board feet plus roughly one hour of travel each side, and for the segment it carries. Recommended minimum top-board width = max(`E + I/4`, `P`).
+3. **Tracking duration.** Total travel time = `extra tracking travel / 15.04°/h` (sidereal); 22.5° gives about 1.5 h. (O includes N, which is the width of the mount base, not travel.) Display it.
 4. **Low latitude.** Warn when α < ~10°, where H and the radii become very large.
+5. **Segment cannot be built.** Show an error, and offer no template or plan, when M ≤ 0 (the polar axis is below the platform, at high latitudes or with a very thick platform) or when the arc ends do not reach below the flat edge (`I · cos(O/2) ≤ flat edge`).
 
 ## 5. Outputs
 
@@ -97,7 +104,7 @@ Grouped in Material cards/tabs, each with a copy-to-clipboard button.
 1. **Platform dimensions** — H, S, T, E, F, recommended top-board width, tracking time.
 2. **North pivot / north bearing** — radius I, segment angle N/O, chord P, segment height L, polar axis to platform M, distance from origin H.
 3. **Circular segments** (the whole arc, for reference) — table for the north segment: radius, chord length, angle, thickness, sagitta, distance from origin. The segment also gets a 2D marking-out sketch (SVG) showing radius, chord, arc angle and centre of curvature.
-4. **Plans and downloads** — a 1:1 template of one end piece (cut two, flip the template for the second; one whole segment when no middle is left out) and a plan view of the platform (top board, mount footprint, the two pieces, the south pivot). Both are SVG drawn in millimetres, so a print at 100 % scale is 1:1, and each has a download button. The plan is for orientation: the piece positions are projected from the tilted segment plane.
+4. **Plans and downloads** — a 1:1 template of one end piece (its flat edge goes against the underside of the top board) (cut two, flip the template for the second; one whole segment when no middle is left out) and a plan view of the platform (top board, mount footprint, the two pieces, the south pivot). Both are SVG drawn in millimetres, so a print at 100 % scale is 1:1, and each has a download button. The plan is for orientation: the piece positions are projected from the tilted segment plane.
 5. **Drive (optional section)** — see §6.
 6. **3D view** — see §7.
 
@@ -121,7 +128,7 @@ Defaults give ideal ratio 58.348 and 58 teeth. Note: the spreadsheet uses a 24 h
 north_radius = (1436 / (60 / motor_rph) · shaft_diameter) / 2
 ```
 
-Example from the source: 4 rph motor, 12.7 mm shaft → 607.9 mm (the source quotes 0.5 in → 23.93 in). Given a motor rph and shaft diameter, the app can compute this radius and show the difference versus the radius `I` from §4.2 (the source suggests shifting the north bearing slightly forward/back to compensate). Motor rph and shaft diameter are optional inputs.
+Example from the source: 4 rph motor, 12.7 mm shaft → 607.9 mm (the source quotes 0.5 in → 23.93 in). Given a motor rph and shaft diameter, the app can compute this radius and show the difference versus the radius `I` from §4.2 (the source suggests shifting the north bearing slightly forward/back to compensate). Motor rph and shaft diameter are optional inputs. The sidereal-correction toggle from §6.1 applies here too: off uses a 1440 min day instead of 1436.
 
 ## 7. 3D representation
 
@@ -132,12 +139,13 @@ A three.js scene in a dedicated Angular component (`PlatformViewerComponent`).
 - The polar axis tilted by α from the horizontal. A compass-style "N" marker for orientation.
 - Controls: OrbitControls (rotate/zoom/pan), reset-view button, wireframe toggle, dimension labels toggle.
 - Rebuilds geometry reactively when inputs change (debounced ~150 ms). Dispose geometries/materials on rebuild and on destroy.
-- Optional animation: slider/play button rotating the platform about the polar axis through the travel angle O, to illustrate tracking.
+- Optional animation: slider/play button rotating the platform about the polar axis through ±travel/2 (not O, which includes N), turning against the Earth's rotation, to illustrate tracking.
+- Axes: right-handed like three.js, y up, z towards the visible celestial pole, so x is west in the northern hemisphere and east in the southern.
 - Colours come from the Material theme. Support light and dark.
 
 ## 8. Open questions / assumptions
 
-- **Southern hemisphere.** The source guides assume the northern hemisphere. Proposed: accept signed latitude, compute with |α|, and mirror the orientation labels ("north bearing" becomes "pole-side bearing" in the south). To be confirmed.
+- **Southern hemisphere.** The source guides assume the northern hemisphere. Signed latitude is accepted and the geometry uses |α|. In the south the bearing and segment are named "south" and the pivot "north" (results, template, plan, 3D markers), and the tracking animation turns the other way.
 - **Units.** Metric only: mm, kg, degrees. No imperial inputs, outputs or toggle. Figures taken from the imperial source are converted in this spec.
 - **Segment shape.** Circular-segment (Sky at Night) design only. The Optical Ed's conical north bearing and the vertical north section are out of scope for v1.
 - **Platform weight in C of G.** The Optical Ed's method includes the moving platform's weight in the C of G (a negative height). The Sky at Night method does not. v1 uses the Sky at Night method, with an optional "platform weight / height" input considered for v2.
