@@ -86,7 +86,7 @@ Shown as non-blocking warnings:
 
 ## 5. Outputs
 
-Grouped in Material cards/tabs, each with a copy-to-clipboard button and a unit toggle (mm / inches).
+Grouped in Material cards/tabs, each with a copy-to-clipboard button.
 
 1. **Platform dimensions** — H, J, E, F, recommended top-board width, tracking time.
 2. **North pivot / north bearing** — radius I, segment angle N/O, chord P, segment height L, polar axis to platform M, distance from origin H.
@@ -114,7 +114,7 @@ Defaults give ideal ratio 58.348 and 58 teeth. Note: the spreadsheet uses a 24 h
 north_radius = (1436 / (60 / motor_rph) · shaft_diameter) / 2
 ```
 
-Example from the source: 4 rph motor, 0.5 in shaft → 23.93 in. Given a motor rph and shaft diameter, the app can compute this radius and show the difference versus the radius `I` from §4.2 (the source suggests shifting the north bearing slightly forward/back to compensate). Motor rph and shaft diameter are optional inputs.
+Example from the source: 4 rph motor, 12.7 mm shaft → 607.9 mm (the source quotes 0.5 in → 23.93 in). Given a motor rph and shaft diameter, the app can compute this radius and show the difference versus the radius `I` from §4.2 (the source suggests shifting the north bearing slightly forward/back to compensate). Motor rph and shaft diameter are optional inputs.
 
 ## 7. 3D representation
 
@@ -131,7 +131,7 @@ A three.js scene in a dedicated Angular component (`PlatformViewerComponent`).
 ## 8. Open questions / assumptions
 
 - **Southern hemisphere.** The source guides assume the northern hemisphere. Proposed: accept signed latitude, compute with |α|, and mirror the orientation labels ("north bearing" becomes "pole-side bearing" in the south). To be confirmed.
-- **Units.** The sources mix mm and inches. Proposal: mm internally, with an inches display toggle.
+- **Units.** Metric only: mm, kg, degrees. No imperial inputs, outputs or toggle. Figures taken from the imperial source are converted in this spec.
 - **Segment shape.** Circular-segment (Sky at Night) design only. The Optical Ed's conical north bearing and the vertical north section are out of scope for v1.
 - **Platform weight in C of G.** The Optical Ed's method includes the moving platform's weight in the C of G (a negative height). The Sky at Night method does not. v1 uses the Sky at Night method, with an optional "platform weight / height" input considered for v2.
 - **Persistence.** Proposal: save inputs to `localStorage` and encode them in the URL query string for sharing.
@@ -165,5 +165,5 @@ src/app/
 2. Calculation module + tests (§4, §9).
 3. Inputs form and results cards.
 4. 3D viewer.
-5. 2D marking-out sketch, drive section, unit toggle, URL/localStorage persistence.
+5. 2D marking-out sketch, drive section, URL/localStorage persistence.
 6. Polish: warnings, light/dark theme, accessibility, deployment (GitHub Pages).
