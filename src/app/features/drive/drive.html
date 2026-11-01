@@ -1,0 +1,98 @@
+<mat-card appearance="outlined" data-testid="card-drive">
+  <mat-card-header>
+    <mat-card-title>Drive (optional)</mat-card-title>
+    <mat-card-subtitle>Needs valid platform inputs</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <form [formGroup]="form" class="form" aria-label="Drive inputs">
+      <h3 class="heading">Worm drive</h3>
+      <div class="grid">
+        <app-numeric-field
+          [control]="form.controls.spindleDiameterMm"
+          label="Spindle / gear diameter"
+          unit="mm"
+          [min]="0"
+          testId="spindle-diameter"
+        />
+        <app-numeric-field
+          [control]="form.controls.motorRpm"
+          label="Motor output speed"
+          unit="rpm"
+          [min]="0"
+          testId="motor-rpm"
+        />
+      </div>
+      <mat-slide-toggle formControlName="siderealCorrection" data-testid="sidereal">
+        Sidereal correction (off uses a 24 h day)
+      </mat-slide-toggle>
+
+      @if (worm(); as w) {
+        <table class="values" data-testid="worm-results">
+          <tbody>
+            <tr>
+              <th scope="row">Required spindle speed</th>
+              <td class="num">{{ w.requiredSpindleRpm.toFixed(4) }} rpm</td>
+            </tr>
+            <tr>
+              <th scope="row">Ideal gear ratio</th>
+              <td class="num">{{ w.idealRatio.toFixed(3) }}</td>
+            </tr>
+            <tr>
+              <th scope="row">Teeth (single-start worm)</th>
+              <td class="num">{{ w.teeth }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="actions">
+          <button mat-button type="button" (click)="copyWorm()">Copy</button>
+        </div>
+      } @else {
+        <p class="empty" data-testid="worm-empty">
+          Enter valid platform and worm drive inputs to see the gear ratio.
+        </p>
+      }
+
+      <h3 class="heading">Direct-drive synchronous motor</h3>
+      <div class="grid">
+        <app-numeric-field
+          [control]="form.controls.motorRph"
+          label="Motor speed"
+          unit="rev/h"
+          [min]="0"
+          hint="Optional"
+          testId="motor-rph"
+        />
+        <app-numeric-field
+          [control]="form.controls.shaftDiameterMm"
+          label="Shaft diameter"
+          unit="mm"
+          [min]="0"
+          hint="Optional"
+          testId="shaft-diameter"
+        />
+      </div>
+
+      @if (direct(); as d) {
+        <table class="values" data-testid="direct-results">
+          <tbody>
+            <tr>
+              <th scope="row">Required north radius</th>
+              <td class="num">{{ d.requiredNorthRadiusMm.toFixed(1) }} mm</td>
+            </tr>
+            <tr>
+              <th scope="row">Difference from calculated radius (I)</th>
+              <td class="num">{{ d.differenceMm.toFixed(1) }} mm</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="actions">
+          <button mat-button type="button" (click)="copyDirect()">Copy</button>
+        </div>
+      } @else if (directIncomplete()) {
+        <p class="empty" data-testid="direct-incomplete">
+          Enter both the motor speed and the shaft diameter.
+        </p>
+      }
+    </form>
+  </mat-card-content>
+</mat-card>
