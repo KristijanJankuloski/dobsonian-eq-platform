@@ -10,6 +10,7 @@ import {
   WormDriveInputs,
   WormDriveResult,
 } from './models';
+import { sagitta, toDeg, toRad } from '../util/math';
 
 export const DEFAULT_INPUTS: PlatformInputs = {
   latitudeDeg: 50.7279,
@@ -36,9 +37,6 @@ export const SIDEREAL_DEG_PER_HOUR = 15.04;
 export const SIDEREAL_DAY_MIN = 1436.07;
 export const SOLAR_DAY_MIN = 1440;
 
-const toRad = (deg: number): number => (deg * Math.PI) / 180;
-const toDeg = (rad: number): number => (rad * 180) / Math.PI;
-
 /** Returns a list of problems with the inputs. Empty when valid. */
 export function validateInputs(inputs: PlatformInputs): string[] {
   const errors: string[] = [];
@@ -60,13 +58,6 @@ export function validateInputs(inputs: PlatformInputs): string[] {
     errors.push('centre of gravity heights must not be negative');
   }
   return errors;
-}
-
-/** Sagitta of a chord on a circle: R − sqrt(R² − (c/2)²). */
-export function sagitta(radiusMm: number, chordMm: number): number {
-  const half = chordMm / 2;
-  if (half >= radiusMm) return radiusMm;
-  return radiusMm - Math.sqrt(radiusMm * radiusMm - half * half);
 }
 
 /** Core platform geometry (SPEC §4.2). Throws RangeError on invalid inputs. */

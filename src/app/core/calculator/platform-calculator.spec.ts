@@ -4,9 +4,9 @@ import {
   calculateGeometry,
   calculatePlatform,
   calculateWormDrive,
-  sagitta,
   validateInputs,
 } from './platform-calculator';
+import { sagitta } from '../util/math';
 
 describe('calculateGeometry', () => {
   it('reproduces the spreadsheet reference values (SPEC §4.3)', () => {
@@ -77,15 +77,6 @@ describe('calculatePlatform checks', () => {
   it('warns at low latitude', () => {
     const { checks } = calculatePlatform({ ...DEFAULT_INPUTS, latitudeDeg: 5 });
     expect(checks.warnings.map((w) => w.code)).toEqual(['lowLatitude']);
-  });
-});
-
-describe('sagitta', () => {
-  it('matches a known case', () => {
-    expect(sagitta(5, 6)).toBeCloseTo(1, 12);
-  });
-  it('is clamped to the radius when the chord exceeds the diameter', () => {
-    expect(sagitta(5, 20)).toBe(5);
   });
 });
 
