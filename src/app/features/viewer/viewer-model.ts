@@ -8,12 +8,14 @@ import { PlatformInputs, PlatformResult } from '@core/calculator';
  *   x = east, y = up, z = north. The ground board's top surface is y = 0.
  *   The origin is where the polar axis crosses the ground plane (y = 0).
  *   The polar axis points up and north: u = (0, sin α, cos α).
- *   The north and south bearing contact points lie on the ground line at
- *   z = H and z = J (SPEC §4.2), directly under the mount's north and south
- *   edges. The platform's top plane is at y = F, where the mount sits.
+ *   The single north bearing contact point lies on the ground line at z = H
+ *   (SPEC §4.2), directly under the mount's north edge. The platform's top
+ *   plane is at y = F, where the mount sits. At the south end the platform
+ *   turns on a pivot where the polar axis crosses that plane, at
+ *   (0, F, F / tan α) (Reiner Vogel's design).
  *
- * Each bearing segment lives in a plane perpendicular to the polar axis,
- * centred on the axis, with its curved edge at radius I (north) or K (south)
+ * The bearing segment lives in a plane perpendicular to the polar axis,
+ * centred on the axis, with its curved edge at radius I
  * and its flat edge on the platform plane. In that plane, `a` runs east and
  * `b` runs along e2 = (0, cos α, −sin α); the circle's lowest point is at
  * (a, b) = (0, −radius), where it touches the ground line.
@@ -32,7 +34,7 @@ export interface Point2 {
 }
 
 export interface SegmentModel {
-  id: 'north' | 'south';
+  id: 'north';
   radiusMm: number;
   /** Centre of the segment's circle, on the polar axis. */
   centre: Vec3;
@@ -60,8 +62,10 @@ export interface ViewerModel {
   /** Unit vector e2 of the segment plane (see above). */
   planeUp: Vec3;
   segments: SegmentModel[];
+  /** South pivot: the polar axis where it crosses the platform plane. */
+  pivot: Vec3;
   /** Segments that cannot be drawn, with the reason. */
-  skipped: { id: 'north' | 'south'; reason: string }[];
+  skipped: { id: 'north'; reason: string }[];
   /** Axial thickness of a segment board, mm. */
   segmentWidthMm: number;
   groundBoard: Box;
@@ -133,15 +137,16 @@ export function buildViewerModel(inputs: PlatformInputs, result: PlatformResult)
   const axisDir: Vec3 = { x: 0, y: sinA, z: cosA };
   const planeUp: Vec3 = { x: 0, y: cosA, z: -sinA };
   const H = g.northDistanceMm;
-  const J = g.southDistanceMm;
-  const zCentre = (H + J) / 2;
+  const pivot: Vec3 = { x: 0, y: F, z: g.southPivotDistanceMm };
+  const mountZ = H - E / 2;
+  const boardMargin = 60;
+  const zStart = Math.min(pivot.z, H - E) - boardMargin;
+  const zEnd = H + boardMargin;
+  const zCentre = (zStart + zEnd) / 2;
 
   const segments: SegmentModel[] = [];
   const skipped: ViewerModel['skipped'] = [];
-  const specs = [
-    { id: 'north' as const, radius: g.northRadiusMm, distance: H },
-    { id: 'south' as const, radius: g.southRadiusMm, distance: J },
-  ];
+  const specs = [{ id: 'north' as const, radius: g.northRadiusMm, distance: H }];
   for (const s of specs) {
     const topDistance = s.radius - g.segmentHeightMm;
     const profile = segmentProfile(s.radius, topDistance, g.segmentAngleDeg);
@@ -162,8 +167,7 @@ export function buildViewerModel(inputs: PlatformInputs, result: PlatformResult)
   }
 
   const boardWidth = Math.max(result.checks.minTopBoardWidthMm, g.northChordMm, E);
-  const boardMargin = 60;
-  const boardLength = H - J + 2 * boardMargin;
+  const boardLength = zEnd - zStart;
   const boardT = Math.min(BOARD_THICKNESS_MM, F);
 
   const groundBoard: Box = {
@@ -176,7 +180,7 @@ export function buildViewerModel(inputs: PlatformInputs, result: PlatformResult)
   };
   const mountHeight = Math.max(2 * inputs.mountCogHeightMm, 20);
   const mountBox: Box = {
-    centre: { x: 0, y: F + mountHeight / 2, z: zCentre },
+    centre: { x: 0, y: F + mountHeight / 2, z: mountZ },
     size: { x: E, y: mountHeight, z: E },
   };
 
@@ -185,7 +189,7 @@ export function buildViewerModel(inputs: PlatformInputs, result: PlatformResult)
   const tubeRadius = E * 0.35;
   const tubeLength = Math.max(1.8 * inputs.scopeCogHeightMm, 4 * tubeRadius);
   const tube = {
-    centre: { x: 0, y: F + inputs.scopeCogHeightMm, z: zCentre },
+    centre: { x: 0, y: F + inputs.scopeCogHeightMm, z: mountZ },
     axisDir,
     radiusMm: tubeRadius,
     lengthMm: tubeLength,
@@ -199,11 +203,12 @@ export function buildViewerModel(inputs: PlatformInputs, result: PlatformResult)
       text: `α ${Math.abs(inputs.latitudeDeg).toFixed(1)}°`,
       position: add(scale(axisDir, -labelHeightMm * 2), { x: 0, y: -labelHeightMm, z: 0 }),
     },
+    { text: 'S pivot', position: add(pivot, { x: 0, y: labelHeightMm, z: -labelHeightMm }) },
     { text: 'C of G', position: add(cog, { x: 0, y: labelHeightMm, z: 0 }) },
   ];
   for (const s of segments) {
     labels.push({
-      text: `${s.id === 'north' ? 'I' : 'K'} = ${s.radiusMm.toFixed(0)} mm`,
+      text: `I = ${s.radiusMm.toFixed(0)} mm`,
       position: { x: boardWidth / 2 + labelHeightMm * 2, y: labelHeightMm, z: s.contact.z },
     });
   }
@@ -213,6 +218,7 @@ export function buildViewerModel(inputs: PlatformInputs, result: PlatformResult)
     axisDir,
     planeUp,
     segments,
+    pivot,
     skipped,
     segmentWidthMm: SEGMENT_WIDTH_MM,
     groundBoard,

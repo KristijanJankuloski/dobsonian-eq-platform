@@ -75,29 +75,27 @@ export function calculateGeometry(
 
   const G = (A * B + C * D) / (A + C);
   const H = (G + F) / Math.tan(alpha) + E / 2;
-  const J = H - E;
   const I = H * Math.sin(alpha);
-  const K = J * Math.sin(alpha);
   const L = F / Math.cos(alpha);
   const M = I - L;
   const N = toDeg(2 * Math.atan(E / 2 / I));
   const O = N + options.extraTravelDeg;
   const halfO = toRad(O / 2);
   const P = 2 * I * Math.sin(halfO) + options.chordMarginMm;
-  const Q = 2 * K * Math.sin(halfO) + options.chordMarginMm;
+  // South pivot: where the polar axis crosses the platform plane (height F).
+  const pivot = F / Math.tan(alpha);
 
   return {
     cogHeightMm: G,
     northDistanceMm: H,
-    southDistanceMm: J,
     northRadiusMm: I,
-    southRadiusMm: K,
     segmentHeightMm: L,
     polarAxisToPlatformMm: M,
     baseAngleDeg: N,
     segmentAngleDeg: O,
     northChordMm: P,
-    southChordMm: Q,
+    southPivotDistanceMm: pivot,
+    pivotToNorthBearingMm: H - pivot,
   };
 }
 
@@ -116,7 +114,6 @@ export function calculateChecks(
   }
   return {
     northSagittaMm: sagitta(geometry.northRadiusMm, geometry.northChordMm),
-    southSagittaMm: sagitta(geometry.southRadiusMm, geometry.southChordMm),
     minTopBoardWidthMm,
     trackingHours: geometry.segmentAngleDeg / SIDEREAL_DEG_PER_HOUR,
     warnings,

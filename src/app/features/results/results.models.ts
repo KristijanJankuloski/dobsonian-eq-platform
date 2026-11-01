@@ -13,10 +13,9 @@ export interface ResultSection {
   rows: ResultRow[];
 }
 
-/** One row of the circular-segments table: a measure for north and south. */
+/** One row of the circular-segments table: a measure of the north segment. */
 export interface SegmentRow {
   label: string;
-  north: string;
-  south: string;
+  value: string;
   unit: string;
 }

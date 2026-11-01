@@ -49,26 +49,24 @@
 
     <mat-card appearance="outlined" data-testid="card-segments">
       <mat-card-header>
-        <h2 mat-card-title>Circular segments</h2>
+        <h2 mat-card-title>North circular segment</h2>
       </mat-card-header>
       <mat-card-content>
         <table class="values segments">
           <caption class="visually-hidden">
-            Circular segments, north and south
+            North circular segment
           </caption>
           <thead>
             <tr>
               <th scope="col"><span class="visually-hidden">Measure</span></th>
-              <th scope="col" class="num">North</th>
-              <th scope="col" class="num">South</th>
+              <th scope="col" class="num">Value</th>
             </tr>
           </thead>
           <tbody>
             @for (s of segments(); track s.label) {
               <tr>
                 <th scope="row">{{ s.label }}</th>
-                <td class="num">{{ s.north }} {{ s.unit }}</td>
-                <td class="num">{{ s.south }} {{ s.unit }}</td>
+                <td class="num">{{ s.value }} {{ s.unit }}</td>
               </tr>
             }
           </tbody>
@@ -78,7 +76,7 @@
         <button
           mat-button
           type="button"
-          aria-label="Copy circular segments"
+          aria-label="Copy north circular segment"
           (click)="copySegments()"
         >
           Copy

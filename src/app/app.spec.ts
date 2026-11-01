@@ -21,12 +21,11 @@ describe('App', () => {
     expect(el.textContent).toContain('597.7 mm');
   });
 
-  it('shows both marking-out sketches and hides them when inputs are invalid', async () => {
+  it('shows the marking-out sketch and hides them when inputs are invalid', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('[data-testid="sketch-north"]')).not.toBeNull();
-    expect(el.querySelector('[data-testid="sketch-south"]')).not.toBeNull();
 
     const lat = el.querySelector<HTMLInputElement>('[data-testid="latitude"]')!;
     lat.value = '90';

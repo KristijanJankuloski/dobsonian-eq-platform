@@ -17,14 +17,12 @@ describe('buildViewerModel', () => {
     expect(m.axisDir.z).toBeGreaterThan(0); // points north
   });
 
-  it('puts each segment centre on the axis at the reference radius from its contact point', () => {
+  it('puts the segment centre on the axis at the reference radius from its contact point', () => {
     const { model: m } = model();
     const north = m.segments.find((s) => s.id === 'north')!;
-    const south = m.segments.find((s) => s.id === 'south')!;
+    expect(m.segments.length).toBe(1);
     expect(dist(north.centre, north.contact)).toBeCloseTo(462.744, 2); // I
-    expect(dist(south.centre, south.contact)).toBeCloseTo(207.275, 2); // K
     expect(north.contact.z).toBeCloseTo(597.746, 3); // H
-    expect(south.contact.z).toBeCloseTo(267.746, 3); // J
     // The contact point is perpendicular to the axis from the centre.
     const toContact = {
       x: north.contact.x - north.centre.x,
@@ -34,6 +32,14 @@ describe('buildViewerModel', () => {
     expect(dot(toContact, m.axisDir)).toBeCloseTo(0, 6);
     // ...and points along −e2 (down and north), touching the ground line.
     expect(dot(toContact, m.planeUp)).toBeCloseTo(-462.744, 2);
+  });
+
+  it('puts the south pivot on the polar axis in the platform plane', () => {
+    const { model: m } = model();
+    expect(m.pivot.y).toBeCloseTo(75, 9); // F
+    expect(m.pivot.z).toBeCloseTo(61.3, 1);
+    // On the axis through the origin: pivot ∥ axisDir.
+    expect(m.pivot.y / m.axisDir.y).toBeCloseTo(m.pivot.z / m.axisDir.z, 9);
   });
 
   it('places the platform plane at M = I − L from the axis (SPEC §4.3)', () => {
@@ -91,19 +97,19 @@ describe('buildViewerModel', () => {
   });
 
   it('skips a segment that cannot be drawn instead of producing a bad shape', () => {
-    // A very thick platform makes L larger than the south radius.
-    const { model: m } = model({ platformThicknessMm: 300 });
+    // A very thick platform makes L larger than the radius.
+    const { model: m } = model({ platformThicknessMm: 500 });
     expect(m.skipped.length).toBeGreaterThan(0);
     for (const s of m.segments)
       for (const p of s.profile) expect(Number.isFinite(p.a + p.b)).toBe(true);
   });
 
-  it('includes a north marker and a dimension label per drawn segment', () => {
+  it('includes a north marker and a dimension label and a pivot label', () => {
     const { model: m } = model();
     const texts = m.labels.map((l) => l.text);
     expect(texts).toContain('N');
     expect(texts).toContain('I = 463 mm');
-    expect(texts).toContain('K = 207 mm');
+    expect(texts).toContain('S pivot');
   });
 });
 

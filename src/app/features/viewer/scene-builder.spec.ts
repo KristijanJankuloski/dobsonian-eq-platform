@@ -14,7 +14,8 @@ describe('buildScene', () => {
     const { parts } = build();
     const names = parts.platform.children.map((c) => c.name);
     expect(names).toContain('segment-north');
-    expect(names).toContain('segment-south');
+    expect(names).not.toContain('segment-south');
+    expect(parts.root.getObjectByName('south-pivot')).toBeDefined();
     expect(names).toContain('top-board');
     expect(names).toContain('cog');
     expect(parts.silhouette.children.map((c) => c.name).sort()).toEqual(['mount', 'tube']);
@@ -80,8 +81,8 @@ describe('buildScene', () => {
   });
 
   it('skips segments that cannot be drawn', () => {
-    const { parts } = build({ platformThicknessMm: 300 });
-    expect(parts.platform.getObjectByName('segment-south')).toBeUndefined();
+    const { parts } = build({ platformThicknessMm: 500 });
+    expect(parts.platform.getObjectByName('segment-north')).toBeUndefined();
     parts.dispose();
   });
 

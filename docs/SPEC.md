@@ -8,7 +8,7 @@ A browser app that, given a Dobsonian telescope's dimensions/weights and the obs
 
 - Overall platform dimensions
 - North pivot / north bearing geometry
-- Circular segment (north and south bearing) measurements, suitable for marking out plywood
+- Circular segment (north bearing) measurements and south pivot position, suitable for marking out plywood
 - Optional drive dimensions (spindle / worm gear)
 - Interactive 3D representation
 
@@ -47,39 +47,40 @@ Units: millimetres, kilograms, degrees. Trig functions take radians internally. 
 
 ### 4.2 Core geometry
 
+**Design.** This follows Reiner Vogel's circle-segment platform: one circle segment under the north end of the platform, and a simple pivot (a bolt with washers) at the south end. The pivot sits on the polar axis where it crosses the platform plane, so the platform turns about the polar axis. The three support points are the north segment (two contact points on the segment ends of travel) and the south pivot. An earlier version of this spec used two segments (north and south) from the Sky at Night article; that has been replaced.
+
 ```
 G  = (A·B + C·D) / (A + C)              combined C of G height above ground
 H  = (G + F) / tan(α) + E/2             distance from origin to north bearing
-J  = H − E                              distance from origin to south bearing
 I  = H · sin(α)                         radius of north bearing
-K  = J · sin(α)                         radius of south bearing
 L  = F / cos(α)                         height (radial thickness) of the segments
 M  = I − L                              polar axis to platform (north bearing plane)
 N  = 2 · atan((E/2) / I)  (in degrees)  angle of north segment below the platform
 O  = N + 22.5°                          angle of segment including travel extensions
 P  = 2 · I · sin(O/2) + 30              chord length of north segment
-Q  = 2 · K · sin(O/2) + 30              chord length of south segment
+S  = F / tan(α)                         distance from origin to the south pivot
+T  = H − S                              south pivot to north bearing
 ```
 
 Notes:
 - The "origin" is the point on the line marking the bottom of the mount (top of the platform) where the polar axis, drawn at angle α, crosses it. The geometry is a side-view construction; the combined C of G sits on the polar axis. See the Sky at Night geometry diagram.
 - N is the angle subtended by the mount base width at the north radius. O adds 22.5° (≈ 1.5 h of sidereal travel at 15°/h) of extension. Make the 22.5° a configurable "extra tracking travel" parameter, defaulting to 22.5°.
-- The `+ 30` in P and Q is a 30 mm allowance added by the source spreadsheet to the chord. Make it a configurable "chord margin", default 30 mm.
+- The `+ 30` in P is a 30 mm allowance added by the source spreadsheet to the chord. Make it a configurable "chord margin", default 30 mm.
 - The spreadsheet's name for L is "height of North bearing segment" and for M is "polar axis to platform (north bearing plane)".
 
 ### 4.3 Reference output (defaults above)
 
 ```
-G 454.238   H 597.746   J 267.746
-I 462.744   K 207.275   L 118.483   M 344.262
-N 39.249°   O 61.749°   P 504.925   Q 242.731
+G 454.238   H 597.746   S 61.326   T 536.420
+I 462.744   L 118.483   M 344.262
+N 39.249°   O 61.749°   P 504.925
 ```
 
 ### 4.4 Sanity checks (Optical Ed's guide)
 
 Shown as non-blocking warnings:
 
-1. **Bearing chord vs. height.** For a given chord `c` and radius `R`, the sagitta is `R − sqrt(R² − (c/2)²)`. Show this for both segments so the user knows the stock board depth needed.
+1. **Bearing chord vs. height.** For a given chord `c` and radius `R`, the sagitta is `R − sqrt(R² − (c/2)²)`. Show this for the north segment so the user knows the stock board depth needed.
 2. **Platform width.** The platform must be wide enough for the ground-board feet plus roughly one hour of travel each side. Rule of thumb from the source: at least `E` plus about `I/4`. Show the recommended minimum top-board width.
 3. **Tracking duration.** Total travel time = `O / 15.04°/h` (sidereal). Display it.
 4. **Low latitude.** Warn when α < ~10°, where H and the radii become very large.
@@ -88,9 +89,9 @@ Shown as non-blocking warnings:
 
 Grouped in Material cards/tabs, each with a copy-to-clipboard button.
 
-1. **Platform dimensions** — H, J, E, F, recommended top-board width, tracking time.
+1. **Platform dimensions** — H, S, T, E, F, recommended top-board width, tracking time.
 2. **North pivot / north bearing** — radius I, segment angle N/O, chord P, segment height L, polar axis to platform M, distance from origin H.
-3. **Circular segments** — table for North and South: radius, chord length, angle, thickness, sagitta, distance from origin. Each segment also gets a 2D marking-out sketch (SVG) showing radius, chord, arc angle and centre of curvature.
+3. **Circular segments** — table for the north segment: radius, chord length, angle, thickness, sagitta, distance from origin. The segment also gets a 2D marking-out sketch (SVG) showing radius, chord, arc angle and centre of curvature.
 4. **Drive (optional section)** — see §6.
 5. **3D view** — see §7.
 
@@ -120,7 +121,7 @@ Example from the source: 4 rph motor, 12.7 mm shaft → 607.9 mm (the source quo
 
 A three.js scene in a dedicated Angular component (`PlatformViewerComponent`).
 
-- Elements: ground/base board, bottom plane at thickness F, north and south bearing segments (cylinder sections / extruded arc shapes, radii I and K, angle O, thickness L), top platform board, the mount base board footprint (E), the polar axis as a line, and an indication of the combined C of G on the polar axis.
+- Elements: ground/base board, bottom plane at thickness F, the north bearing segment (a cylinder section / extruded arc shape, radius I, angle O, thickness L), the south pivot bolt, top platform board, the mount base board footprint (E), the polar axis as a line, and an indication of the combined C of G on the polar axis.
 - A simplified telescope/mount silhouette (box + cylinder) positioned by B, D and E for context. Toggleable.
 - The polar axis tilted by α from the horizontal. A compass-style "N" marker for orientation.
 - Controls: OrbitControls (rotate/zoom/pan), reset-view button, wireframe toggle, dimension labels toggle.

@@ -38,7 +38,8 @@ export class Results {
         title: 'Platform dimensions',
         rows: [
           row('Distance from origin to north bearing', 'H', mm(g.northDistanceMm), 'mm'),
-          row('Distance from origin to south bearing', 'J', mm(g.southDistanceMm), 'mm'),
+          row('Distance from origin to south pivot', '', mm(g.southPivotDistanceMm), 'mm'),
+          row('South pivot to north bearing', '', mm(g.pivotToNorthBearingMm), 'mm'),
           row('Mount base width', 'E', mm(i.mountBaseWidthMm), 'mm'),
           row('Platform thickness', 'F', mm(i.platformThicknessMm), 'mm'),
           row('Recommended minimum top-board width', '', mm(c.minTopBoardWidthMm), 'mm'),
@@ -68,27 +69,12 @@ export class Results {
     const c = r.checks;
     const angle = deg(g.segmentAngleDeg);
     return [
-      { label: 'Radius', north: mm(g.northRadiusMm), south: mm(g.southRadiusMm), unit: 'mm' },
-      { label: 'Chord length', north: mm(g.northChordMm), south: mm(g.southChordMm), unit: 'mm' },
-      { label: 'Arc angle', north: angle, south: angle, unit: '°' },
-      {
-        label: 'Thickness',
-        north: mm(g.segmentHeightMm),
-        south: mm(g.segmentHeightMm),
-        unit: 'mm',
-      },
-      {
-        label: 'Sagitta (board depth)',
-        north: mm(c.northSagittaMm),
-        south: mm(c.southSagittaMm),
-        unit: 'mm',
-      },
-      {
-        label: 'Distance from origin',
-        north: mm(g.northDistanceMm),
-        south: mm(g.southDistanceMm),
-        unit: 'mm',
-      },
+      { label: 'Radius', value: mm(g.northRadiusMm), unit: 'mm' },
+      { label: 'Chord length', value: mm(g.northChordMm), unit: 'mm' },
+      { label: 'Arc angle', value: angle, unit: '°' },
+      { label: 'Thickness', value: mm(g.segmentHeightMm), unit: 'mm' },
+      { label: 'Sagitta (board depth)', value: mm(c.northSagittaMm), unit: 'mm' },
+      { label: 'Distance from origin', value: mm(g.northDistanceMm), unit: 'mm' },
     ];
   });
 
@@ -102,10 +88,8 @@ export class Results {
   }
 
   protected copySegments(): void {
-    const lines = this.segments().map(
-      (s) => `${s.label}: north ${s.north} ${s.unit}, south ${s.south} ${s.unit}`,
-    );
-    this.copy(`Circular segments\n${lines.join('\n')}`);
+    const lines = this.segments().map((s) => `${s.label}: ${s.value} ${s.unit}`);
+    this.copy(`North circular segment\n${lines.join('\n')}`);
   }
 
   private copy(text: string): void {

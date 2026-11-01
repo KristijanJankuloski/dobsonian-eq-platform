@@ -8,7 +8,7 @@ Angular + Angular Material + three.js app that calculates the dimensions of a ci
 
 ## What it does
 
-Enter your latitude, the weights and centre-of-gravity heights of the scope and mount, the mount base width and the platform thickness. The app shows the platform dimensions, the north and south bearing segments (with marking-out sketches), optional worm-drive and direct-drive calculations, and an interactive 3D view. Inputs are saved in the browser and in the page address, so a link shares your numbers. Metric units only.
+Enter your latitude, the weights and centre-of-gravity heights of the scope and mount, the mount base width and the platform thickness. The app shows the platform dimensions, the north bearing segment (with a marking-out sketch) and the south pivot position, optional worm-drive and direct-drive calculations, and an interactive 3D view. Inputs are saved in the browser and in the page address, so a link shares your numbers. Metric units only.
 
 ## Development
 
