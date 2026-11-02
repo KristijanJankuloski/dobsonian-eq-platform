@@ -28,7 +28,7 @@ const SWEEP_SECONDS = 8;
 /** How often the slider readout follows the animation, ms. */
 const READOUT_INTERVAL_MS = 100;
 
-/** Resolves a CSS custom property (even a light-dark() one) to an rgb() colour. */
+/** Resolves a CSS custom property to an rgb() colour. */
 function resolveColor(host: HTMLElement, token: string, fallback: string): string {
   try {
     const probe = host.ownerDocument.createElement('span');
@@ -89,7 +89,6 @@ export class Viewer {
   private parts: SceneParts | null = null;
   private model: ViewerModel | null = null;
   private resizeObserver: ResizeObserver | null = null;
-  private colorQuery: MediaQueryList | null = null;
   private rebuildTimer: ReturnType<typeof setTimeout> | undefined;
   private frame = 0;
   private animFrame = 0;
@@ -184,18 +183,10 @@ export class Viewer {
       this.resizeObserver = new ResizeObserver(() => this.resize());
       this.resizeObserver.observe(host);
     }
-    // Rebuild with new theme colours when the system light/dark preference changes.
-    this.colorQuery = globalThis.matchMedia?.('(prefers-color-scheme: dark)') ?? null;
-    this.colorQuery?.addEventListener?.('change', this.onThemeChange);
-
     this.ready = true;
     this.resize();
     this.rebuild(this.inputs(), this.result(), true);
   }
-
-  private readonly onThemeChange = (): void => {
-    this.rebuild(this.inputs(), this.result(), false);
-  };
 
   private destroy(): void {
     this.destroyed = true;
@@ -203,7 +194,6 @@ export class Viewer {
     cancelAnimationFrame(this.frame);
     cancelAnimationFrame(this.animFrame);
     this.resizeObserver?.disconnect();
-    this.colorQuery?.removeEventListener?.('change', this.onThemeChange);
     this.controls?.dispose();
     this.parts?.dispose();
     this.renderer?.dispose();

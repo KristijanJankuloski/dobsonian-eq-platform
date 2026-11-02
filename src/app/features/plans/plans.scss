@@ -3,8 +3,8 @@
 }
 
 .drawing {
-  // The drawings are black on white paper in both themes (they are printed),
-  // so the preview keeps a white sheet instead of a theme token.
+  // The drawings are black on white paper (they are printed), so the
+  // preview keeps a white sheet instead of a theme token.
   background: #fff;
   border-radius: var(--mat-sys-corner-small);
   padding: 8px;

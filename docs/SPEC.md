@@ -159,7 +159,7 @@ A three.js scene in a dedicated Angular component (`PlatformViewerComponent`).
 - Rebuilds geometry reactively when inputs change (debounced ~150 ms). Dispose geometries/materials on rebuild and on destroy.
 - Optional animation: slider/play button rotating the platform about the polar axis through ±travel/2 (not O, which includes N), turning against the Earth's rotation, to illustrate tracking.
 - Axes: right-handed like three.js, y up, z towards the visible celestial pole, so x is west in the northern hemisphere and east in the southern.
-- Colours come from the Material theme. Support light and dark.
+- Colours come from the Material theme. The app is light mode only; there is no dark mode.
 
 ## 8. Open questions / assumptions
 
@@ -201,4 +201,4 @@ src/app/
 3. Inputs form and results cards.
 4. 3D viewer.
 5. 2D marking-out sketch, drive section, URL/localStorage persistence.
-6. Polish: warnings, light/dark theme, accessibility, deployment (GitHub Pages).
+6. Polish: warnings, light theme, accessibility, deployment (GitHub Pages).
