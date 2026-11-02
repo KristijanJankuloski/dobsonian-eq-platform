@@ -150,6 +150,8 @@ describe('validateOptions', () => {
     ['unusedMiddlePercent', -1],
     ['topBoardThicknessMm', -1],
     ['topBoardThicknessMm', 75],
+    ['freeRollerDiameterMm', 0],
+    ['driveRollerDiameterMm', -5],
   ])('rejects %s = %s', (key, value) => {
     const options = { ...DEFAULT_OPTIONS, [key]: value };
     expect(validateOptions(options, DEFAULT_INPUTS).length).toBe(1);

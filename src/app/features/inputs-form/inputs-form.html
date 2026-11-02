@@ -103,6 +103,22 @@
         hint="The segment's flat edge goes against its underside"
         testId="top-board"
       />
+      <app-numeric-field
+        [control]="form.controls.freeRollerDiameterMm"
+        label="Free roller diameter"
+        unit="mm"
+        [min]="0.1"
+        hint="The roller under one end of the arc; 22 mm is a 608 bearing"
+        testId="free-roller"
+      />
+      <app-numeric-field
+        [control]="form.controls.driveRollerDiameterMm"
+        label="Drive roller diameter"
+        unit="mm"
+        [min]="0.1"
+        hint="The roller the motor turns; use the same diameter as the drive spindle"
+        testId="drive-roller"
+      />
     </div>
     @if (form.hasError('topBoard')) {
       <p class="error" role="alert" data-testid="top-board-error">

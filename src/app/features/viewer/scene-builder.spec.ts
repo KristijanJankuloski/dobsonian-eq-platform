@@ -50,6 +50,21 @@ describe('buildScene', () => {
     parts.dispose();
   });
 
+  it('puts the free and drive rollers on their axles, along the polar axis', () => {
+    const { parts, model } = build();
+    for (const r of model.rollerAxles) {
+      const mesh = parts.root.getObjectByName(`roller-${r.kind}`) as Mesh;
+      expect(mesh).toBeDefined();
+      expect(mesh.position.distanceTo(new Vector3(r.axle.x, r.axle.y, r.axle.z))).toBeCloseTo(0, 9);
+      const up = new Vector3(0, 1, 0).applyQuaternion(mesh.quaternion);
+      expect(up.dot(new Vector3(model.axisDir.x, model.axisDir.y, model.axisDir.z))).toBeCloseTo(
+        1,
+        9,
+      );
+    }
+    parts.dispose();
+  });
+
   it('draws a line for each lettered measurement when labels are on', () => {
     const { model } = build();
     const parts = buildScene(model, FALLBACK_COLORS);

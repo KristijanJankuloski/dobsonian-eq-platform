@@ -180,6 +180,18 @@ export function buildScene(
     root.add(marker);
   }
 
+  // Rollers on the ground board, axles along the polar axis; they stay put.
+  for (const r of model.rollerAxles) {
+    const roller = new Mesh(
+      new CylinderGeometry(r.diameterMm / 2, r.diameterMm / 2, 7, 24),
+      standard(r.kind === 'drive' ? colors.tertiary : colors.outline),
+    );
+    roller.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), v3(model.axisDir));
+    roller.position.set(r.axle.x, r.axle.y, r.axle.z);
+    roller.name = `roller-${r.kind}`;
+    root.add(roller);
+  }
+
   // Pivot bolt: sits on the polar axis, so it stays put while the platform turns.
   const bolt = new Mesh(
     new CylinderGeometry(model.labelHeightMm * 0.3, model.labelHeightMm * 0.3, 60, 16),

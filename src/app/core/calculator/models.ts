@@ -35,6 +35,16 @@ export interface PlatformOptions {
    * taken off the segment height. Must be less than F.
    */
   topBoardThicknessMm: number;
+  /**
+   * Diameter of the free-running roller under one end of the segment arc, mm.
+   * Default 22 (a 608 skate bearing).
+   */
+  freeRollerDiameterMm: number;
+  /**
+   * Diameter of the roller the motor turns under the other end, mm. Default
+   * 12.5, the default spindle of the drive section; use the same value there.
+   */
+  driveRollerDiameterMm: number;
 }
 
 /** Core geometry results (SPEC §4.2). Letters match the Sky at Night diagram. */

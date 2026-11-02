@@ -57,6 +57,8 @@ const ADVANCED = [
   'chordMarginMm',
   'unusedMiddlePercent',
   'topBoardThicknessMm',
+  'freeRollerDiameterMm',
+  'driveRollerDiameterMm',
 ] as const;
 
 const positive: ValidatorFn = (c) =>
@@ -123,6 +125,14 @@ export class InputsForm {
         finite,
         Validators.min(0),
       ]),
+      freeRollerDiameterMm: this.numberControl(this.initial.options.freeRollerDiameterMm, [
+        finite,
+        positive,
+      ]),
+      driveRollerDiameterMm: this.numberControl(this.initial.options.driveRollerDiameterMm, [
+        finite,
+        positive,
+      ]),
     },
     { validators: [totalMass, topBoardThinner] },
   );
@@ -178,6 +188,8 @@ export class InputsForm {
         chordMarginMm: v.chordMarginMm!,
         unusedMiddlePercent: v.unusedMiddlePercent!,
         topBoardThicknessMm: v.topBoardThicknessMm!,
+        freeRollerDiameterMm: v.freeRollerDiameterMm!,
+        driveRollerDiameterMm: v.driveRollerDiameterMm!,
       },
     };
   }
