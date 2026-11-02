@@ -61,12 +61,12 @@ Run from the project root. Confirm paths with `--dry-run` the first time.
 - Use signal `input()`, `output()`, `model()`; `computed` for derived values; `inject()` for dependencies.
 - Use `@if`, `@for` (always with `track`), `@switch`. Self-closing tags for components with no projected content.
 - Call methods directly in event bindings: `(click)="reset()"`.
-- Custom CSS goes in the component's own stylesheet and uses Material system tokens (`var(--mat-sys-...)`), not hard-coded colours, so light and dark themes both work.
+- Custom CSS goes in the component's own stylesheet and uses Material system tokens (`var(--mat-sys-...)`), not hard-coded colours.
 - Derive results with `computed()` from the form value signal; do not recompute in templates or store the result in a second writable signal.
 
 ## Angular Material
 
-- Set up with `npx ng add @angular/material`. One theme file, light and dark via `color-scheme`, following the system preference.
+- Set up with `npx ng add @angular/material`. One theme file, light only (`theme-type: light`, `color-scheme: light`). There is no dark mode.
 - Every control sits in a `mat-form-field` with a `mat-label`. Units are shown with a `matSuffix` (`mm`, `kg`, `°`). Validation messages use `mat-error`.
 - Numeric fields use `type="number"` with `min`, `max`, `step`. The limits come from SPEC §4.1 (for example latitude 1 to 89).
 - Group outputs in `mat-card` or `mat-tab-group` as SPEC §5 lays out. Tabular data uses `mat-table` or plain semantic `<table>` with Material typography; pick one and stay with it.
@@ -88,7 +88,7 @@ Run from the project root. Confirm paths with `--dry-run` the first time.
 - Size the canvas from its container with a `ResizeObserver`, set pixel ratio to `min(devicePixelRatio, 2)`.
 - Scene units are millimetres. Keep the polar axis, north direction and handedness identical to SPEC §7, and put axis conventions in a comment at the top of the scene builder.
 - Build scene objects with small pure builder functions (`buildSegment(radiusMm, angleDeg, thicknessMm)`), so geometry maths can be unit tested without WebGL.
-- Take colours from the Material theme via CSS variables, read when the scene is built and on theme change.
+- Take colours from the Material theme via CSS variables, read when the scene is built.
 
 ## Routing
 
@@ -112,10 +112,10 @@ Run from the project root. Confirm paths with `--dry-run` the first time.
 - Every control has a visible label or an `aria-label`. Icon-only and repeated buttons (for example "Copy") get a name that says what they act on.
 - Data tables have a `<caption>` (visually hidden is fine) and `scope` on headers.
 - Status and empty-state messages use `role="status"`. Do not announce every keystroke.
-- Colours come from the Material theme tokens, so contrast holds in light and dark. Do not hard-code colours.
+- Colours come from the Material theme tokens, so contrast holds. Do not hard-code colours.
 - Layouts must work at 360 px wide with no horizontal scroll. Use `minmax(min(100%, Npx), 1fr)` grids, not fixed widths.
 - The 3D view is supplementary: its numbers must also be available as text in the results. Its canvas area is focusable and pans with the arrow keys.
-- Before a PR that changes the UI, check it at 360 px and 1200 px, light and dark, and run an axe-core audit (no violations).
+- Before a PR that changes the UI, check it at 360 px and 1200 px and run an axe-core audit (no violations).
 
 ## Tooling
 
