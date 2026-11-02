@@ -21,7 +21,7 @@ import {
   Vector2,
   Vector3,
 } from 'three';
-import { Box, ViewerModel } from '@shared/models/platform-model';
+import { Box, PlanPoint, ViewerModel } from '@shared/models/platform-model';
 
 /** Theme colours as CSS colour strings. */
 export interface ThemeColors {
@@ -62,6 +62,24 @@ function boxMesh(box: Box, material: Material): Mesh {
   const mesh = new Mesh(new BoxGeometry(box.size.x, box.size.y, box.size.z), material);
   mesh.position.set(box.centre.x, box.centre.y, box.centre.z);
   return mesh;
+}
+
+/**
+ * A board cut to a plan outline, `thickness` thick with its top face at `topY`.
+ * The shape is drawn in (x, z) and extruded downwards.
+ */
+function boardMesh(
+  outline: PlanPoint[],
+  topY: number,
+  thickness: number,
+  material: Material,
+): Mesh {
+  const shape = new Shape(outline.map((p) => new Vector2(p.x, p.z)));
+  const geometry = new ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false });
+  // Rotating +90° about x maps the shape's (x, y, depth) to (x, −depth, y).
+  geometry.rotateX(Math.PI / 2);
+  geometry.translate(0, topY, 0);
+  return new Mesh(geometry, material);
 }
 
 /** A text sprite, or null when no 2D canvas is available (for example in tests). */
@@ -132,7 +150,14 @@ export function buildScene(
     });
 
   // Fixed parts: ground board, polar axis, north marker.
-  root.add(boxMesh(model.groundBoard, standard(colors.surfaceVariant)));
+  const ground = boardMesh(
+    model.board.outline,
+    model.groundBoard.centre.y + model.groundBoard.size.y / 2,
+    model.groundBoard.size.y,
+    standard(colors.surfaceVariant),
+  );
+  ground.name = 'ground-board';
+  root.add(ground);
 
   const axisLine = new Line(
     new BufferGeometry().setFromPoints([v3(model.axis.from), v3(model.axis.to)]),
@@ -187,7 +212,12 @@ export function buildScene(
   }
 
   // Semi-transparent so the segments underneath stay visible.
-  const topBoard = boxMesh(model.topBoard, standard(colors.secondary, { opacity: 0.6 }));
+  const topBoard = boardMesh(
+    model.board.outline,
+    model.topBoard.centre.y + model.topBoard.size.y / 2,
+    model.topBoard.size.y,
+    standard(colors.secondary, { opacity: 0.6 }),
+  );
   topBoard.name = 'top-board';
   platform.add(topBoard);
 
@@ -220,6 +250,18 @@ export function buildScene(
       const sprite = labelSprite(label.text, colors.onSurface, model.labelHeightMm);
       if (!sprite) continue;
       sprite.position.set(label.position.x, label.position.y, label.position.z);
+      labels.add(sprite);
+    }
+    // Lettered result measurements: a line over what each one measures, and its label.
+    const dimMaterial = new LineBasicMaterial({ color: colors.tertiary, depthTest: false });
+    for (const d of model.dimensions) {
+      const lineObj = new Line(new BufferGeometry().setFromPoints(d.points.map(v3)), dimMaterial);
+      lineObj.name = `dimension-${d.letter}`;
+      lineObj.renderOrder = 9;
+      labels.add(lineObj);
+      const sprite = labelSprite(d.text, colors.tertiary, model.labelHeightMm * 0.85);
+      if (!sprite) continue;
+      sprite.position.set(d.labelAt.x, d.labelAt.y, d.labelAt.z);
       labels.add(sprite);
     }
   }

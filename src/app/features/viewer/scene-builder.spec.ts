@@ -31,6 +31,34 @@ describe('buildScene', () => {
     parts.dispose();
   });
 
+  it('cuts the top and ground boards to the board outline', () => {
+    const { parts, model } = build();
+    const top = parts.platform.getObjectByName('top-board') as Mesh;
+    const ground = parts.root.getObjectByName('ground-board') as Mesh;
+    for (const mesh of [top, ground]) {
+      mesh.geometry.computeBoundingBox();
+      const box = mesh.geometry.boundingBox!;
+      expect(box.max.x - box.min.x).toBeCloseTo(model.board.widthMm, 3);
+      expect(box.max.z).toBeCloseTo(model.board.poleEdgeZ, 3);
+      expect(box.min.z).toBeCloseTo(model.board.equatorEdgeZ, 3);
+    }
+    top.geometry.computeBoundingBox();
+    expect(top.geometry.boundingBox!.max.y).toBeCloseTo(75, 6);
+    expect(top.geometry.boundingBox!.min.y).toBeCloseTo(75 - 18, 6);
+    ground.geometry.computeBoundingBox();
+    expect(ground.geometry.boundingBox!.max.y).toBeCloseTo(0, 6);
+    parts.dispose();
+  });
+
+  it('draws a line for each lettered measurement when labels are on', () => {
+    const { model } = build();
+    const parts = buildScene(model, FALLBACK_COLORS);
+    for (const letter of ['E', 'F', 'G', 'H', 'I', 'L', 'M', 'N', 'O', 'P', 'S', 'T']) {
+      expect(parts.labels.getObjectByName(`dimension-${letter}`)).toBeDefined();
+    }
+    parts.dispose();
+  });
+
   it('puts the north segment bounding box around the bearing contact point', () => {
     const { parts, model } = build();
     const mesh = parts.platform.getObjectByName('segment-whole') as Mesh;
@@ -98,7 +126,10 @@ describe('buildScene', () => {
     const inputs = DEFAULT_INPUTS;
     const model = buildViewerModel(inputs, calculatePlatform(inputs));
     const parts = buildScene(model, FALLBACK_COLORS); // jsdom has no canvas context
-    expect(parts.labels.children.length).toBe(0);
+    // Only the dimension lines are left: no text sprites.
+    const names = parts.labels.children.map((c) => c.name);
+    expect(names.length).toBe(model.dimensions.length);
+    expect(names.every((n) => n.startsWith('dimension-'))).toBe(true);
     parts.dispose();
   });
 });

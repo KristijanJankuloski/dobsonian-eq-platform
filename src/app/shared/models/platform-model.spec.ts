@@ -167,12 +167,117 @@ describe('buildViewerModel', () => {
     expect(m.segments).toEqual([]);
   });
 
-  it('includes a north marker and a dimension label and a pivot label', () => {
+  it('includes a north marker and a pivot label', () => {
     const { model: m } = model();
     const texts = m.labels.map((l) => l.text);
     expect(texts).toContain('N');
-    expect(texts).toContain('I = 463 mm');
     expect(texts).toContain('S pivot');
+  });
+
+  it('shows every lettered result measurement with its value', () => {
+    const { model: m } = model();
+    const texts = m.dimensions.map((d) => d.text);
+    for (const t of [
+      'E 330 mm',
+      'F 75 mm',
+      'G 454.2 mm',
+      'H 597.7 mm',
+      'I 462.7 mm',
+      'L 118.5 mm',
+      'M 344.3 mm',
+      'N 39.2°',
+      'O 61.7°',
+      'P 504.9 mm',
+      'S 61.3 mm',
+      'T 536.4 mm',
+    ]) {
+      expect(texts).toContain(t);
+    }
+    const byLetter = (l: string) => m.dimensions.find((d) => d.letter === l)!;
+    // Each straight measurement's line is as long as its value.
+    const len = (l: string) => {
+      const [p, q] = byLetter(l).points;
+      return dist(p, q);
+    };
+    expect(len('H')).toBeCloseTo(597.746, 3);
+    expect(len('S')).toBeCloseTo(61.326, 3);
+    expect(len('T')).toBeCloseTo(536.42, 3);
+    expect(len('I')).toBeCloseTo(462.744, 3);
+    expect(len('M')).toBeCloseTo(344.262, 3);
+    expect(len('L')).toBeCloseTo(118.483, 3);
+    expect(len('G')).toBeCloseTo(454.238, 3);
+    // M ends on the platform plane, L on the ground.
+    expect(byLetter('M').points[1].y).toBeCloseTo(75, 6);
+    expect(byLetter('L').points[1].y).toBeCloseTo(0, 6);
+  });
+
+  it('leaves out the segment measurements when the segment cannot be built', () => {
+    const { model: m } = model({ platformThicknessMm: 500 });
+    const letters = m.dimensions.map((d) => d.letter);
+    expect(letters).toContain('H');
+    expect(letters).not.toContain('I');
+  });
+});
+
+describe('board shape', () => {
+  it('has a straight pole edge as wide as P, an arc round the mount and a nose round the pivot', () => {
+    const { model: m } = model();
+    const b = m.board;
+    expect(b.poleEdgeWidthMm).toBeCloseTo(504.925, 3);
+    expect(b.widthMm).toBeCloseTo(504.925, 3);
+    // Arc diameter: E + I/4, centred under the mount.
+    expect(b.mountArc.radiusMm).toBeCloseTo((330 + 462.744 / 4) / 2, 3);
+    expect(b.mountArc.z).toBeCloseTo(597.746 - 165, 3);
+    expect(b.pivotArc.z).toBeCloseTo(m.pivot.z, 9);
+    expect(b.lengthMm).toBeCloseTo(b.poleEdgeZ - b.equatorEdgeZ, 9);
+    // The pole edge is past the bearing contact and the pivot nose before the pivot.
+    expect(b.poleEdgeZ).toBeGreaterThan(597.746);
+    expect(b.equatorEdgeZ).toBeLessThanOrEqual(m.pivot.z - 60);
+    // Symmetric about the centre line and convex.
+    const xs = b.outline.map((p) => p.x);
+    expect(Math.max(...xs)).toBeCloseTo(-Math.min(...xs), 6);
+    const n = b.outline.length;
+    for (let i = 0; i < n; i++) {
+      const [o, p, q] = [b.outline[i], b.outline[(i + 1) % n], b.outline[(i + 2) % n]];
+      expect((p.x - o.x) * (q.z - o.z) - (p.z - o.z) * (q.x - o.x)).toBeGreaterThan(0);
+    }
+  });
+
+  it('covers the rollers, the pivot and the mount base', () => {
+    const { model: m } = model();
+    const inside = (x: number, z: number) => {
+      const o = m.board.outline;
+      for (let i = 0; i < o.length; i++) {
+        const p = o[i];
+        const q = o[(i + 1) % o.length];
+        if ((q.x - p.x) * (z - p.z) - (q.z - p.z) * (x - p.x) < 0) return false;
+      }
+      return true;
+    };
+    for (const r of m.rollers) expect(inside(r.x, r.z)).toBe(true);
+    expect(inside(0, m.pivot.z)).toBe(true);
+    const mountZ = 597.746 - 165;
+    for (const [x, z] of [
+      [165, mountZ],
+      [-165, mountZ],
+      [0, mountZ + 165],
+      [0, mountZ - 165],
+    ]) {
+      expect(inside(x, z)).toBe(true);
+    }
+  });
+
+  it('puts the rollers on the arc at ±N/2, under the mount base edges', () => {
+    const { model: m } = model();
+    const seg = m.segments[0];
+    const half = (39.249 / 2 / 180) * Math.PI;
+    for (const r of m.rollers) {
+      expect(dist(r, seg.centre)).toBeCloseTo(462.744, 3);
+      expect(Math.abs(r.x)).toBeCloseTo(462.744 * Math.sin(half), 2);
+      // Contact height above the ground board: I cos α (1 − cos(N/2)).
+      const cosA = Math.cos((50.7279 * Math.PI) / 180);
+      expect(r.y).toBeCloseTo(462.744 * cosA * (1 - Math.cos(half)), 2);
+    }
   });
 });
 

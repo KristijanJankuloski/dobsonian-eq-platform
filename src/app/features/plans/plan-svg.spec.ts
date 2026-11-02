@@ -1,5 +1,6 @@
 import { DEFAULT_INPUTS, DEFAULT_OPTIONS, calculatePlatform } from '@core/calculator';
-import { PLAN_CLASS, TEMPLATE_CLASS, buildPlatformPlan, buildSegmentTemplate } from './plan-svg';
+import { BOARD_CLASS, TEMPLATE_CLASS, buildBoardTemplate, buildSegmentTemplate } from './plan-svg';
+import { DRAWING_CLASS, buildPlatformDrawing } from './platform-drawing';
 
 const split = calculatePlatform(DEFAULT_INPUTS);
 const whole = calculatePlatform(DEFAULT_INPUTS, { ...DEFAULT_OPTIONS, unusedMiddlePercent: 0 });
@@ -30,10 +31,14 @@ describe('buildSegmentTemplate', () => {
   });
 
   it('scopes its styles to its own root, so inline previews do not restyle the page', () => {
-    for (const svg of [buildSegmentTemplate(split).svg, buildPlatformPlan(DEFAULT_INPUTS, split)]) {
+    for (const svg of [
+      buildSegmentTemplate(split).svg,
+      buildBoardTemplate(DEFAULT_INPUTS, split),
+      buildPlatformDrawing(DEFAULT_INPUTS, split).svg,
+    ]) {
       const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
       const root = doc.documentElement.getAttribute('class')!;
-      expect([TEMPLATE_CLASS, PLAN_CLASS]).toContain(root);
+      expect([TEMPLATE_CLASS, BOARD_CLASS, DRAWING_CLASS]).toContain(root);
       const css = doc.querySelector('style')!.textContent!;
       const selectors = css
         .split('}')
@@ -62,30 +67,34 @@ describe('buildSegmentTemplate', () => {
   });
 });
 
-describe('buildPlatformPlan', () => {
-  it('is valid SVG with the pivot and both pieces', () => {
-    const svg = buildPlatformPlan(DEFAULT_INPUTS, split);
-    const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
+describe('buildBoardTemplate', () => {
+  const parse = (svg: string) => new DOMParser().parseFromString(svg, 'image/svg+xml');
+
+  it('is a 1:1 SVG of the board outline with the pivot, pieces and rollers', () => {
+    const svg = buildBoardTemplate(DEFAULT_INPUTS, split);
+    const doc = parse(svg);
     expect(doc.querySelector('parsererror')).toBeNull();
-    expect(doc.querySelectorAll('rect.cut').length).toBe(2);
+    const root = doc.documentElement;
+    const [, , w] = root.getAttribute('viewBox')!.split(' ').map(Number);
+    expect(parseFloat(root.getAttribute('width')!)).toBeCloseTo(w, 2);
+    // Outline path, one pivot, two dashed piece rectangles.
+    expect(doc.querySelectorAll('path.cut').length).toBe(1);
     expect(doc.querySelector('circle.pivot')).not.toBeNull();
-    expect(svg).toContain('pivot to north bearing 536.42 mm');
+    expect(doc.querySelectorAll('rect.dash').length).toBe(2);
     expect(svg).toContain('south pivot');
+    expect(svg).toContain('Cut 2');
+    expect(svg).toContain('100 mm');
   });
 
   it('swaps the pole and pivot names in the southern hemisphere', () => {
     const inputs = { ...DEFAULT_INPUTS, latitudeDeg: -50.7279 };
-    const svg = buildPlatformPlan(inputs, calculatePlatform(inputs));
+    const svg = buildBoardTemplate(inputs, calculatePlatform(inputs));
     expect(svg).toContain('north pivot');
-    expect(svg).toContain('pivot to south bearing');
     expect(svg).toContain('>S</text>');
   });
 
-  it('draws one rectangle for a whole segment', () => {
-    const doc = new DOMParser().parseFromString(
-      buildPlatformPlan(DEFAULT_INPUTS, whole),
-      'image/svg+xml',
-    );
-    expect(doc.querySelectorAll('rect.cut').length).toBe(1);
+  it('draws one piece rectangle for a whole segment', () => {
+    const doc = parse(buildBoardTemplate(DEFAULT_INPUTS, whole));
+    expect(doc.querySelectorAll('rect.dash').length).toBe(1);
   });
 });

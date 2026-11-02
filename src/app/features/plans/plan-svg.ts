@@ -29,7 +29,7 @@ const escapeXml = (s: string): string =>
 
 /** Root classes of the drawings; the style selectors are scoped to them. */
 export const TEMPLATE_CLASS = 'dep-template';
-export const PLAN_CLASS = 'dep-plan';
+export const BOARD_CLASS = 'dep-board';
 
 function document_(
   scope: string,
@@ -117,51 +117,50 @@ export function buildSegmentTemplate(result: PlatformResult, latitudeDeg = 1): S
 }
 
 /**
- * Plan view (from above) of the platform: top board, mount footprint, the
- * end pieces of the segment under the pole end and the pivot at the other
- * end. The pole is at the top. Dimensions are approximate positions for
- * orientation.
+ * 1:1 template of the board outline, seen from above with the pole at the
+ * top. The top board and the ground board are both cut to it: the top board
+ * gets the pivot hole and the segment lines, the ground board the pivot hole
+ * and the roller positions.
  */
-export function buildPlatformPlan(inputs: PlatformInputs, result: PlatformResult): string {
+export function buildBoardTemplate(inputs: PlatformInputs, result: PlatformResult): string {
   const model = buildViewerModel(inputs, result);
   const names = hemisphereNames(inputs.latitudeDeg);
   const g = result.geometry;
+  const board = model.board;
   const E = inputs.mountBaseWidthMm;
-  const board = model.topBoard;
-  const bw = board.size.x;
-  const bl = board.size.z;
-  const zTop = board.centre.z + bl / 2; // pole-side edge
-  const zBottom = board.centre.z - bl / 2;
+  const bw = board.widthMm;
+  const bl = board.lengthMm;
+  const zTop = board.poleEdgeZ;
   const pad = 40;
-  const head = 50;
-  const foot = 40;
+  const head = 70;
+  const foot = 50;
   const totalW = bw + pad * 2;
   const totalH = bl + head + foot + pad;
-  // Plan coordinates, seen from above with the pole at the top: the model's
-  // +x (west in the north, east in the south) is on the left in both
-  // hemispheres, so x is negated. y down = (zTop − z). Then shifted into the page.
+  // Seen from above with the pole at the top: the model's +x (west in the
+  // north, east in the south) is on the left in both hemispheres, so x is
+  // negated. y down = (zTop − z). Then shifted into the page.
   const px = (x: number): number => r2(-x + bw / 2 + pad);
   const left = (x0: number, x1: number): number => Math.min(px(x0), px(x1));
   const py = (z: number): number => r2(zTop - z + head);
 
-  const outer = toRad(g.pieceOuterAngleDeg);
-  const inner = toRad(g.pieceInnerAngleDeg);
   const whole = g.pieceInnerAngleDeg === 0;
-  const seg = model.segments[0];
   const parts: string[] = [];
-
+  const outline = board.outline.map((p, i) => `${i ? 'L' : 'M'} ${px(p.x)} ${py(p.z)}`).join(' ');
+  const mountZ = board.mountArc.z;
   parts.push(
-    `<rect class="line" x="${left(-bw / 2, bw / 2)}" y="${py(zTop)}" width="${r2(bw)}" height="${r2(bl)}"/>`,
-    `<rect class="dash" x="${left(-E / 2, E / 2)}" y="${py(model.mountBox.centre.z + E / 2)}" width="${r2(E)}" height="${r2(E)}"/>`,
-    `<text x="${px(0)}" y="${py(model.mountBox.centre.z)}" text-anchor="middle">mount base ${r2(E)} mm</text>`,
+    `<path class="cut" d="${outline} Z"/>`,
+    `<path class="thin" d="M ${px(0)} ${py(zTop) - 10} V ${r2(py(board.equatorEdgeZ) + 10)}"/>`,
+    `<circle class="dash" cx="${px(0)}" cy="${py(mountZ)}" r="${r2(E / 2)}"/>`,
+    `<text x="${px(0)}" y="${r2(py(mountZ) + E / 2 - 8)}" text-anchor="middle">mount base Ø ${r2(E)} mm</text>`,
   );
 
+  const seg = model.segments[0];
   if (seg) {
-    // Flat edge of the segment seen from above: z of the line under the top board.
-    const flatZ = seg.centre.z + -g.segmentFlatEdgeMm * model.planeUp.z;
+    // Flat edge of the segment seen from above, under the top board.
+    const flatZ = seg.centre.z - g.segmentFlatEdgeMm * model.planeUp.z;
     const halfThick = (SEGMENT_WIDTH_MM / 2) * model.axisDir.z;
-    const xo = g.northRadiusMm * Math.sin(outer);
-    const xi = g.northRadiusMm * Math.sin(inner);
+    const xo = g.northRadiusMm * Math.sin(toRad(g.pieceOuterAngleDeg));
+    const xi = g.northRadiusMm * Math.sin(toRad(g.pieceInnerAngleDeg));
     const spans = whole
       ? [[-xo, xo]]
       : [
@@ -170,27 +169,34 @@ export function buildPlatformPlan(inputs: PlatformInputs, result: PlatformResult
         ];
     for (const [x0, x1] of spans) {
       parts.push(
-        `<rect class="cut" x="${left(x0, x1)}" y="${py(flatZ + halfThick)}" width="${r2(x1 - x0)}" height="${r2(2 * halfThick)}"/>`,
+        `<rect class="dash" x="${left(x0, x1)}" y="${py(flatZ + halfThick)}" width="${r2(x1 - x0)}" height="${r2(2 * halfThick)}"/>`,
       );
     }
     parts.push(
-      `<text x="${px(0)}" y="${r2(py(flatZ) + 22)}" text-anchor="middle">${whole ? 'segment' : 'two mirrored segment pieces'}, radius ${r2(g.northRadiusMm)} mm</text>`,
+      `<text x="${px(0)}" y="${r2(py(flatZ) + 22)}" text-anchor="middle">top board: ${whole ? 'segment' : 'two segment pieces'} underneath, radius ${r2(g.northRadiusMm)} mm</text>`,
     );
   }
+  for (const r of model.rollers) {
+    const x = px(r.x);
+    const y = py(r.z);
+    parts.push(`<path class="line" d="M ${x - 8} ${y} h 16 M ${x} ${y - 8} v 16"/>`);
+  }
+  parts.push(
+    `<text x="${px(0)}" y="${r2(py(model.rollers[0].z) + 4)}" text-anchor="middle">ground board: rollers +</text>`,
+  );
 
-  // Pivot and the polar axis direction (towards the pole).
   parts.push(
     `<circle class="pivot" cx="${px(0)}" cy="${py(model.pivot.z)}" r="5"/>`,
-    `<text x="${r2(px(0) + 9)}" y="${r2(py(model.pivot.z) + 3)}">${names.equator.toLowerCase()} pivot</text>`,
-    `<path class="thin" d="M ${px(0)} ${py(model.pivot.z)} V ${py(zTop)}"/>`,
+    `<text x="${r2(px(0) + 9)}" y="${r2(py(model.pivot.z) + 3)}">${names.equator.toLowerCase()} pivot (both boards)</text>`,
     // Pole arrow, at the top right so it stays clear of the title.
     `<path class="line" d="M ${r2(pad + bw - 10)} ${head - 8} v -22 m -4 7 l 4 -7 l 4 7"/>`,
     `<text x="${r2(pad + bw - 18)}" y="${head - 22}" text-anchor="end">${names.poleLetter}</text>`,
-    // Dimension: pivot to bearing.
-    `<text x="${r2(pad + bw - 4)}" y="${r2(py(model.pivot.z) + 18)}" text-anchor="end">pivot to ${names.pole.toLowerCase()} bearing ${r2(g.pivotToNorthBearingMm)} mm</text>`,
-    `<text x="${r2(pad + bw)}" y="${r2(totalH - 12)}" text-anchor="end">top board ${r2(bw)} × ${r2(bl)} mm</text>`,
-    `<text class="big" x="${pad}" y="${head - 30}">Platform plan (view from above, scale 1:1)</text>`,
+    `<text class="big" x="${pad}" y="${pad - 5}">Board template (top and ground board), scale 1:1</text>`,
+    `<text x="${pad}" y="${pad + 9}">Cut 2. Outline ${r2(bl)} × ${r2(bw)} mm. Print at 100 % scale; check the 100 mm bar.</text>`,
+    // 100 mm scale bar to check the print scale.
+    `<path class="line" d="M ${pad} ${r2(totalH - 24)} h 100 m 0 -3 v 6 m -100 0 v -6"/>`,
+    `<text x="${pad + 50}" y="${r2(totalH - 14)}" text-anchor="middle">100 mm</text>`,
   );
 
-  return document_(PLAN_CLASS, totalW, totalH, 'Platform plan, scale 1:1', parts.join(''), 14);
+  return document_(BOARD_CLASS, totalW, totalH, 'Board template, scale 1:1', parts.join(''), 14);
 }

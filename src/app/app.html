@@ -36,7 +36,10 @@
         testId="sketch-north"
       />
       @if (inputs(); as i) {
-        <app-plans [inputs]="i" [result]="r" />
+        <!-- The drawing builders are deferred to keep them out of the initial bundle. -->
+        @defer (on idle) {
+          <app-plans [inputs]="i" [result]="r" />
+        }
       }
     </section>
   }
