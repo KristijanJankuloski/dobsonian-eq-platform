@@ -267,6 +267,46 @@ describe('board shape', () => {
     }
   });
 
+  it('puts each roller axle one radius outside the arc, from the free and drive diameters', () => {
+    const { model: m } = model();
+    const seg = m.segments[0];
+    const [free, drive] = m.rollerAxles;
+    expect(free.kind).toBe('free');
+    expect(drive.kind).toBe('drive');
+    expect(free.diameterMm).toBe(22);
+    expect(drive.diameterMm).toBe(12.5);
+    // Northern hemisphere: +x is west, so the free roller is west and the drive east.
+    expect(free.side).toBe('west');
+    expect(drive.side).toBe('east');
+    for (const r of m.rollerAxles) {
+      // I + r from the circle centre, through the contact point.
+      expect(dist(r.axle, seg.centre)).toBeCloseTo(462.744 + r.diameterMm / 2, 3);
+      expect(dist(r.axle, r.contact)).toBeCloseTo(r.diameterMm / 2, 9);
+      // Square to the polar axis: the axle runs along it.
+      expect(dot(r.normal, m.axisDir)).toBeCloseTo(0, 9);
+      expect(r.axle.y).toBeLessThan(r.contact.y);
+      expect(r.clearanceMm).toBeCloseTo(r.axle.y - (r.diameterMm / 2) * m.planeUp.y, 9);
+      expect(r.clearanceMm).toBeGreaterThan(0);
+    }
+    // Free roller (11 mm): 17 − 11·cos(N/2)·cos α ≈ 10.5 mm.
+    expect(free.axle.y).toBeCloseTo(10.5, 1);
+    expect(drive.axle.y).toBeCloseTo(13.3, 1);
+  });
+
+  it('swaps the roller sides in the southern hemisphere', () => {
+    const { model: m } = model({ latitudeDeg: -50.7279 });
+    expect(m.rollerAxles.map((r) => `${r.kind}-${r.side}`)).toEqual(['free-east', 'drive-west']);
+  });
+
+  it('reports a negative clearance when a big roller would dig into the ground board', () => {
+    const inputs = { ...DEFAULT_INPUTS };
+    const m = buildViewerModel(
+      inputs,
+      calculatePlatform(inputs, { ...WHOLE, freeRollerDiameterMm: 80 }),
+    );
+    expect(m.rollerAxles[0].clearanceMm).toBeLessThan(0);
+  });
+
   it('puts the rollers on the arc at ±N/2, under the mount base edges', () => {
     const { model: m } = model();
     const seg = m.segments[0];

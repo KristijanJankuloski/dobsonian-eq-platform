@@ -27,6 +27,10 @@ const SHEET = { name: 'A3', widthMm: 420, heightMm: 297 };
 const FRAME = 10;
 const TITLE_BLOCK = { widthMm: 180, heightMm: 40 };
 const NOTES_WIDTH = 178;
+/** Height of the roller details, sheet mm (they are drawn at 1:1). */
+const DETAIL_HEIGHT = 62;
+/** Height of the table of measurements, sheet mm (5 + 27 rows at 4.2 + 4 headings). */
+const TABLE_HEIGHT = 125;
 /** How far the polar axis is drawn above the platform top in the elevations, mm (model). */
 const AXIS_ABOVE_MM = 40;
 
@@ -222,7 +226,12 @@ export function buildPlatformDrawing(
     const leftCol = Math.max(W / k + 16, NOTES_WIDTH);
     const width = FRAME + 6 + leftCol + 28 + 24 + L / k + 32;
     const height = FRAME + 10 + elevH / k + 30 + 22 + W / k + 24;
-    return width <= SHEET.widthMm - FRAME && height <= titleTop - 4;
+    const leftHeight = FRAME + 10 + elevH / k + 32 + TABLE_HEIGHT + 4 + DETAIL_HEIGHT;
+    return (
+      width <= SHEET.widthMm - FRAME &&
+      height <= titleTop - 4 &&
+      leftHeight <= SHEET.heightMm - FRAME
+    );
   };
   const k = DRAWING_SCALES.find(fits) ?? DRAWING_SCALES[DRAWING_SCALES.length - 1];
 
@@ -366,8 +375,13 @@ export function buildPlatformDrawing(
         );
       }
     }
-    for (const r of model.rollers) {
-      views.push(`<circle class="hidden" cx="${r2(zX(r.z))}" cy="${r2(planY(r.x))}" r="1.2"/>`);
+    for (const r of model.rollerAxles) {
+      const cx = zX(r.contact.z);
+      const cy = planY(r.contact.x);
+      views.push(
+        `<circle class="hidden" cx="${r2(cx)}" cy="${r2(cy)}" r="1.2"/>`,
+        text(cx - 2, cy + 0.8, r.kind, { anchor: 'end', cls: 'small' }),
+      );
     }
     views.push(
       `<circle class="pivot" cx="${r2(zX(pivot.z))}" cy="${r2(planCy)}" r="${r2(Math.max(5 / k, 0.7))}"/>`,
@@ -459,8 +473,24 @@ export function buildPlatformDrawing(
       'Rollers',
       `2, ${fmt(fromPole(roller.z))} from the pole edge, ${fmt(rollerX)} each side of the centre line`,
     ],
-    ['Roller contact height', `${fmt(roller.y)} above the ground board`],
-    ['Roller axles', `parallel to the polar axis (tilted ${fmt(Math.abs(inputs.latitudeDeg))}°)`],
+    ['Contact height', `${fmt(roller.y)} above the ground board (arc touches the rollers)`],
+    ...model.rollerAxles.flatMap((r): [string, string][] => [
+      [
+        `${r.kind === 'free' ? 'Free' : 'Drive'} roller (${r.side})`,
+        `Ø ${fmt(r.diameterMm)}, axle centre ${fmt(r.axle.y)} above the ground board`,
+      ],
+      [
+        '',
+        `axle ${fmt(Math.abs(r.axle.x))} off the centre line, ${fmt(fromPole(r.axle.z))} from the pole edge`,
+      ],
+      ...(r.clearanceMm < 0
+        ? [['', `recess the ground board ${fmt(-r.clearanceMm)} deep under it`] as [string, string]]
+        : []),
+    ]),
+    [
+      'Roller axles',
+      `parallel to the polar axis, rising ${fmt(Math.abs(inputs.latitudeDeg))}° to the pole`,
+    ],
     [
       'Tracking',
       `±${fmt(g.trackingTravelDeg / 2)}°, ${result.checks.trackingHours.toFixed(1)} h in total`,
@@ -480,6 +510,7 @@ export function buildPlatformDrawing(
       }
       y += 4.2;
     }
+    if (seg) parts.push(rollerDetails(model, I, x, y + 4));
   }
 
   // ---------- Frame and title block. ----------
@@ -522,4 +553,83 @@ export function buildPlatformDrawing(
     parts.join('') +
     `</svg>`;
   return { svg, scale: k, sheet: SHEET.name };
+}
+
+/**
+ * The free and the drive roller seen along the polar axis: the end of
+ * the segment arc, the roller touching it, and the line from the roller's
+ * axle to the polar axis, at 1:1. The axle must be I + r from the polar axis, so the
+ * roller stays in contact as the platform turns.
+ */
+function rollerDetails(
+  model: ReturnType<typeof buildViewerModel>,
+  radiusMm: number,
+  x0: number,
+  top: number,
+): string {
+  const out: string[] = [
+    text(x0, top, 'DETAIL: ROLLERS, seen along the polar axis, scale 1:1', { cls: 'label' }),
+  ];
+  const k = 1;
+  const width = 84;
+  model.rollerAxles.forEach((r, i) => {
+    const ox = x0 + 2 + i * (width + 6);
+    const cx = ox + width / 2;
+    const cy = top + 34;
+    // Segment-plane coordinates of the roller: a along x, b along planeUp, axis at (0, 0).
+    const rad = r.diameterMm / 2;
+    const nA = r.normal.x;
+    const nB = r.normal.y * model.planeUp.y + r.normal.z * model.planeUp.z;
+    const ca = r.contact.x;
+    const cb = -radiusMm * Math.sqrt(Math.max(0, 1 - (ca / radiusMm) ** 2));
+    const aa = ca + nA * rad;
+    const ab = cb + nB * rad;
+    // Looking from the pivot end towards the pole, as in the front view: −x is to the right.
+    const X = (a: number): number => cx - (a - aa) * k;
+    const Y = (b: number): number => cy - (b - ab) * k;
+    const phiC = Math.atan2(ca, -cb);
+    const arc: { x: number; y: number }[] = [];
+    for (let j = 0; j <= 20; j++) {
+      const phi = phiC + ((j - 10) / 10) * (14 / radiusMm);
+      arc.push({ x: X(radiusMm * Math.sin(phi)), y: Y(-radiusMm * Math.cos(phi)) });
+    }
+    // The end of the segment board: the arc and 8 mm of board above it.
+    const lift = 8;
+    const board = [
+      ...arc,
+      ...arc
+        .slice()
+        .reverse()
+        .map((p) => ({ x: p.x + (X(0) - X(nA)) * lift, y: p.y + (Y(0) - Y(nB)) * lift })),
+    ];
+    const toAxis = { x: X(aa - nA * (rad + lift + 8)), y: Y(ab - nB * (rad + lift + 8)) };
+    out.push(
+      `<path class="part" d="${pathOf(board)}"/>`,
+      `<circle class="roller" cx="${r2(cx)}" cy="${r2(cy)}" r="${r2(rad * k)}"/>`,
+      centreMark(cx, cy, rad * k + 2),
+      line(cx, cy, toAxis.x, toAxis.y, 'centre'),
+      arrow(toAxis.x, toAxis.y, toAxis.x - cx, toAxis.y - cy),
+      text(toAxis.x + 1.5, toAxis.y + 1, `to the polar axis: ${fmt(radiusMm + rad)} (I + r)`, {
+        cls: 'small',
+      }),
+      text(cx, cy + rad * k + 6, `axle centre ${fmt(r.axle.y)} above the ground board`, {
+        anchor: 'middle',
+        cls: 'small',
+      }),
+      text(cx, cy + rad * k + 9, `arc touches it ${fmt(r.contact.y)} above the ground board`, {
+        anchor: 'middle',
+        cls: 'small',
+      }),
+      text(
+        cx,
+        top + DETAIL_HEIGHT - 4,
+        `${r.kind.toUpperCase()} ROLLER Ø ${fmt(r.diameterMm)} (${r.side})`,
+        {
+          anchor: 'middle',
+          cls: 'head',
+        },
+      ),
+    );
+  });
+  return out.join('');
 }

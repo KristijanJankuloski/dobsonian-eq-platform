@@ -27,6 +27,8 @@ export const DEFAULT_OPTIONS: PlatformOptions = {
   chordMarginMm: 30,
   unusedMiddlePercent: 25,
   topBoardThicknessMm: 18,
+  freeRollerDiameterMm: 22,
+  driveRollerDiameterMm: 12.5,
 };
 
 export const MAX_UNUSED_MIDDLE_PERCENT = 80;
@@ -81,6 +83,10 @@ export function validateOptions(options: PlatformOptions, inputs?: PlatformInput
     errors.push(`unusedMiddlePercent must be between 0 and ${MAX_UNUSED_MIDDLE_PERCENT}`);
   }
   if (options.topBoardThicknessMm < 0) errors.push('topBoardThicknessMm must not be negative');
+  if (options.freeRollerDiameterMm <= 0) errors.push('freeRollerDiameterMm must be greater than 0');
+  if (options.driveRollerDiameterMm <= 0) {
+    errors.push('driveRollerDiameterMm must be greater than 0');
+  }
   if (inputs && options.topBoardThicknessMm >= inputs.platformThicknessMm) {
     errors.push('topBoardThicknessMm must be less than platformThicknessMm');
   }

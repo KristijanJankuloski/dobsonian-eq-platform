@@ -110,6 +110,8 @@ The result is wide at the pole end and tapers to the pivot. Lengths on the drawi
 
 The arc runs on two rollers on the ground board, one each side, where the arc is at ±N/2 from its centre line with the platform in the middle of its travel (under the edges of the mount base). In the segment plane (§7 axes) a roller is at `(a, b) = (±I·sin(N/2), −I·cos(N/2))`, which is `I·cos α·(1 − cos(N/2))` above the ground board. The roller axles are parallel to the polar axis.
 
+**Free and drive roller.** One roller runs free; the other is turned by the motor. Their diameters are advanced options: free roller default 22 mm (a 608 bearing), drive roller default 12.5 mm (the drive section's default spindle; use the same value in both places). The free roller is on the +x side (west in the northern hemisphere, east in the southern), the drive roller on the other. Each roller turns in the segment plane, so its axle centre is one roller radius r outside the arc, on the line from the polar axis through the contact point: `axle = contact + r · n`, with n the unit vector from the polar axis out through the contact, and the axle is `I + r` from the polar axis. The drawing gives each axle's height above the ground board, its distance from the centre line and from the pole edge. A roller's lowest point is `axle height − r · cos α`; when that is below the ground-board top, the drawing asks for a recess of that depth.
+
 ## 5. Outputs
 
 Grouped in Material cards/tabs, each with a copy-to-clipboard button.
@@ -119,7 +121,7 @@ Grouped in Material cards/tabs, each with a copy-to-clipboard button.
 3. **Circular segments** (the whole arc, for reference) — table for the north segment: radius, chord length, angle, thickness, sagitta, distance from origin. The segment also gets a 2D marking-out sketch (SVG) showing radius, chord, arc angle and centre of curvature.
 4. **Plans and downloads**, all SVG, each with a download button:
    - a 1:1 template of one end piece (its flat edge goes against the underside of the top board) (cut two, flip the template for the second; one whole segment when no middle is left out);
-   - a **dimensioned drawing** of the platform and its base on an A3 landscape sheet, drawn at the largest standard scale that fits (1:1, 1:2, 1:2.5, 1:4, 1:5, 1:10, 1:20, 1:25, 1:50, 1:100), so a print at 100 % keeps that scale. It has a front view (from the pivot end), a side view and a plan, with dimension lines for the outline (length, width, straight pole edge, arc radii and centres), the platform height F, board thicknesses, the pivot position, T, and the roller spacing; a table of measurements (board outline, pivot, mount base, segment radius and pieces, roller positions and contact height, tracking); and a title block (project, title with latitude, size, scale, units, date, sheet). Measurements are in mm to 0.1;
+   - a **dimensioned drawing** of the platform and its base on an A3 landscape sheet, drawn at the largest standard scale that fits (1:1, 1:2, 1:2.5, 1:4, 1:5, 1:10, 1:20, 1:25, 1:50, 1:100), so a print at 100 % keeps that scale. It has a front view (from the pivot end), a side view and a plan, with dimension lines for the outline (length, width, straight pole edge, arc radii and centres), the platform height F, board thicknesses, the pivot position, T, and the roller spacing; a table of measurements (board outline, pivot, mount base, segment radius and pieces, roller positions and contact height, free and drive roller axles, tracking); a 1:1 detail of the free and the drive roller seen along the polar axis, touching the arc, with the axle distance I + r and the heights; and a title block (project, title with latitude, size, scale, units, date, sheet). Measurements are in mm to 0.1;
    - a 1:1 board template of the outline (§4.5), with the pivot, the mount base, the segment pieces (top board) and the rollers (ground board) marked.
    Piece positions in the plan are projected from the tilted segment plane.
 5. **Drive (optional section)** — see §6.
@@ -151,7 +153,7 @@ Example from the source: 4 rph motor, 12.7 mm shaft → 607.9 mm (the source quo
 
 A three.js scene in a dedicated Angular component (`PlatformViewerComponent`).
 
-- Elements: ground/base board and top board cut to the outline of §4.5, bottom plane at thickness F, the north bearing segment as two mirrored end pieces (cylinder sections / extruded arc shapes, radius I, angle O, thickness L), the south pivot bolt, top platform board, the mount base board footprint (E), the polar axis as a line, and an indication of the combined C of G on the polar axis.
+- Elements: ground/base board and top board cut to the outline of §4.5, bottom plane at thickness F, the north bearing segment as two mirrored end pieces (cylinder sections / extruded arc shapes, radius I, angle O, thickness L), the south pivot bolt, the free and drive rollers (axles along the polar axis), top platform board, the mount base board footprint (E), the polar axis as a line, and an indication of the combined C of G on the polar axis.
 - A simplified telescope/mount silhouette (box + cylinder) positioned by B, D and E for context. Toggleable.
 - The polar axis tilted by α from the horizontal. A compass-style "N" marker for orientation.
 - Controls: OrbitControls (rotate/zoom/pan), reset-view button, wireframe toggle, dimension labels toggle.

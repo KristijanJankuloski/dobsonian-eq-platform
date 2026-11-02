@@ -64,13 +64,34 @@ describe('buildPlatformDrawing', () => {
 
   it('draws both segment pieces in the front and plan views, or one whole segment', () => {
     const doc = parse(buildPlatformDrawing(DEFAULT_INPUTS, split).svg);
-    // 2 in front view + 1 band in the side view.
-    expect(doc.querySelectorAll('path.part').length).toBe(3);
+    // 2 in the front view, 1 band in the side view, and the board end in each roller detail.
+    expect(doc.querySelectorAll('path.part').length).toBe(5);
     expect(doc.querySelectorAll('rect.hidden').length).toBe(2);
     const whole = calculatePlatform(DEFAULT_INPUTS, { ...DEFAULT_OPTIONS, unusedMiddlePercent: 0 });
     const docW = parse(buildPlatformDrawing(DEFAULT_INPUTS, whole).svg);
-    expect(docW.querySelectorAll('path.part').length).toBe(2);
+    expect(docW.querySelectorAll('path.part').length).toBe(4);
     expect(docW.querySelectorAll('rect.hidden').length).toBe(1);
+  });
+
+  it('details the free and the drive roller with their axle heights', () => {
+    const model = buildViewerModel(DEFAULT_INPUTS, split);
+    const all = texts(buildPlatformDrawing(DEFAULT_INPUTS, split).svg);
+    expect(all).toContain('DETAIL: ROLLERS, seen along the polar axis, scale 1:1');
+    expect(all).toContain('FREE ROLLER Ø 22 (west)');
+    expect(all).toContain('DRIVE ROLLER Ø 12.5 (east)');
+    for (const r of model.rollerAxles) {
+      expect(all).toContain(`axle centre ${fmt(r.axle.y)} above the ground board`);
+      expect(all).toContain(`to the polar axis: ${fmt(462.744 + r.diameterMm / 2)} (I + r)`);
+    }
+    expect(all).toContain('free');
+    expect(all).toContain('drive');
+    expect(all.some((t) => t.startsWith('recess'))).toBe(false);
+  });
+
+  it('asks for a recess when a roller is too big for the platform height', () => {
+    const r = calculatePlatform(DEFAULT_INPUTS, { ...DEFAULT_OPTIONS, freeRollerDiameterMm: 80 });
+    const all = texts(buildPlatformDrawing(DEFAULT_INPUTS, r).svg);
+    expect(all.some((t) => t.startsWith('recess the ground board'))).toBe(true);
   });
 
   it('picks a smaller scale for a bigger platform', () => {

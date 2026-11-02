@@ -87,6 +87,27 @@ export interface BoardShape {
   pivotArc: { z: number; radiusMm: number };
 }
 
+/**
+ * A roller under one end of the segment arc, on the ground board. Its axle is
+ * parallel to the polar axis, so the roller turns in the segment plane, and
+ * its centre is one roller radius outside the arc, on the line from the polar
+ * axis through the contact point.
+ */
+export interface RollerModel {
+  kind: 'free' | 'drive';
+  /** Which side of the centre line, seen from above with the pole ahead. */
+  side: 'east' | 'west';
+  diameterMm: number;
+  /** Where the arc touches the roller (platform in the middle of its travel). */
+  contact: Vec3;
+  /** Centre of the roller on its axle (mid-plane of the segment). */
+  axle: Vec3;
+  /** Unit vector from the polar axis out through the contact point. */
+  normal: Vec3;
+  /** Lowest point of the roller above the ground-board top; negative means it needs a recess. */
+  clearanceMm: number;
+}
+
 export interface LabelModel {
   /** Short text drawn on a sprite. */
   text: string;
@@ -131,6 +152,8 @@ export interface ViewerModel {
    * centre line, under the edges of the mount base.
    */
   rollers: Vec3[];
+  /** The free roller and the drive roller at those contact points. */
+  rollerAxles: RollerModel[];
   mountBox: Box;
   /** Simplified telescope tube, along the polar axis. */
   tube: { centre: Vec3; axisDir: Vec3; radiusMm: number; lengthMm: number };
@@ -475,6 +498,23 @@ export function buildViewerModel(inputs: PlatformInputs, result: PlatformResult)
     ),
   );
 
+  // +x is west in the northern hemisphere and east in the southern. The free
+  // roller is on the +x side, the motor-driven one on the −x side.
+  const rollerAxles: RollerModel[] = rollers.map((contact, i) => {
+    const kind = i === 0 ? 'free' : 'drive';
+    const diameterMm =
+      kind === 'free' ? result.options.freeRollerDiameterMm : result.options.driveRollerDiameterMm;
+    const r = diameterMm / 2;
+    const out = add(contact, scale(segCentre, -1));
+    const len = Math.hypot(out.x, out.y, out.z) || 1;
+    const normal = scale(out, 1 / len);
+    const axle = add(contact, scale(normal, r));
+    const plusXisWest = !south;
+    const side: RollerModel['side'] = (i === 0) === plusXisWest ? 'west' : 'east';
+    // The roller is a disc in the segment plane (spanned by x and planeUp).
+    return { kind, side, diameterMm, contact, axle, normal, clearanceMm: axle.y - r * planeUp.y };
+  });
+
   // Furthest the segment reaches towards the pole: its flat edge, plus half its thickness.
   const flatZ = segCentre.z - topDistance * planeUp.z;
   const segmentPoleZ = flatZ + (SEGMENT_WIDTH_MM / 2) * cosA;
@@ -565,6 +605,7 @@ export function buildViewerModel(inputs: PlatformInputs, result: PlatformResult)
     board,
     topBoardThicknessMm: boardT,
     rollers,
+    rollerAxles,
     mountBox,
     tube,
     cog,

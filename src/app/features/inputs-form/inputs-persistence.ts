@@ -41,6 +41,8 @@ const FIELDS: Field[] = [
   field('margin', 'nonNegative', 'options', 'chordMarginMm'),
   field('middle', 'percent', 'options', 'unusedMiddlePercent'),
   field('top', 'nonNegative', 'options', 'topBoardThicknessMm'),
+  field('roller', 'positive', 'options', 'freeRollerDiameterMm'),
+  field('drive', 'positive', 'options', 'driveRollerDiameterMm'),
 ];
 
 function field<G extends 'inputs' | 'options'>(

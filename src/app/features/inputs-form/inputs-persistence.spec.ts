@@ -12,6 +12,8 @@ describe('inputs persistence', () => {
         chordMarginMm: 10,
         unusedMiddlePercent: 20,
         topBoardThicknessMm: 12,
+        freeRollerDiameterMm: 30,
+        driveRollerDiameterMm: 10,
       },
     };
     expect(fromQueryParams(toQueryParams(value))).toEqual(value);
@@ -22,6 +24,17 @@ describe('inputs persistence', () => {
       inputs: DEFAULT_INPUTS,
       options: DEFAULT_OPTIONS,
     });
+  });
+
+  it('reads the roller diameters and rejects non-positive ones', () => {
+    expect(parse('roller=26&drive=8')?.options).toEqual({
+      ...DEFAULT_OPTIONS,
+      freeRollerDiameterMm: 26,
+      driveRollerDiameterMm: 8,
+    });
+    const bad = parse('roller=0&drive=-3')!.options;
+    expect(bad.freeRollerDiameterMm).toBe(DEFAULT_OPTIONS.freeRollerDiameterMm);
+    expect(bad.driveRollerDiameterMm).toBe(DEFAULT_OPTIONS.driveRollerDiameterMm);
   });
 
   it('returns null when no known key is present', () => {
@@ -57,6 +70,8 @@ describe('inputs persistence', () => {
       chordMarginMm: 0,
       unusedMiddlePercent: 0,
       topBoardThicknessMm: 0,
+      freeRollerDiameterMm: DEFAULT_OPTIONS.freeRollerDiameterMm,
+      driveRollerDiameterMm: DEFAULT_OPTIONS.driveRollerDiameterMm,
     });
     expect(v.inputs.mountBaseWidthMm).toBe(DEFAULT_INPUTS.mountBaseWidthMm);
     expect(v.inputs.platformThicknessMm).toBe(DEFAULT_INPUTS.platformThicknessMm);

@@ -64,6 +64,15 @@ describe('InputsForm', () => {
     expect(panel().classList).toContain('mat-expanded');
   });
 
+  it('takes the free and drive roller diameters and rejects 0', async () => {
+    await type('free-roller', '26');
+    await type('drive-roller', '10');
+    expect(fixture.componentInstance.value()?.options.freeRollerDiameterMm).toBe(26);
+    expect(fixture.componentInstance.value()?.options.driveRollerDiameterMm).toBe(10);
+    await type('drive-roller', '0');
+    expect(fixture.componentInstance.value()).toBeNull();
+  });
+
   it('requires the top board to be thinner than the platform', async () => {
     await type('top-board', '75');
     expect(fixture.componentInstance.value()).toBeNull();
