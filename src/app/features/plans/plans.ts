@@ -4,9 +4,13 @@ import { MatCardModule } from '@angular/material/card';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { PlatformInputs, PlatformResult } from '@core/calculator';
 import { FileDownload } from '@shared/services/file-download';
-import { buildPlatformPlan, buildSegmentTemplate } from './plan-svg';
+import { buildBoardTemplate, buildSegmentTemplate } from './plan-svg';
+import { buildPlatformDrawing } from './platform-drawing';
 
-/** Previews of the platform plan and the 1:1 segment template, with SVG downloads. */
+/**
+ * Previews of the dimensioned platform drawing and the 1:1 segment template,
+ * with SVG downloads (plus the 1:1 board template).
+ */
 @Component({
   imports: [MatButtonModule, MatCardModule],
   selector: 'app-plans',
@@ -28,21 +32,30 @@ export class Plans {
   protected readonly templateFile = computed(
     () => `${this.template().pole.toLowerCase()}-segment-template-1to1.svg`,
   );
-  protected readonly plan = computed(() => buildPlatformPlan(this.inputs(), this.result()));
+  /** Today's date for the title block, as YYYY-MM-DD. */
+  private readonly today = new Date().toISOString().slice(0, 10);
+  protected readonly drawing = computed(() =>
+    buildPlatformDrawing(this.inputs(), this.result(), this.today),
+  );
+  protected readonly board = computed(() => buildBoardTemplate(this.inputs(), this.result()));
 
   // The SVG is built by this app from numbers only, so it is safe to inline.
   protected readonly templateHtml = computed<SafeHtml>(() =>
     this.sanitizer.bypassSecurityTrustHtml(this.template().svg),
   );
-  protected readonly planHtml = computed<SafeHtml>(() =>
-    this.sanitizer.bypassSecurityTrustHtml(this.plan()),
+  protected readonly drawingHtml = computed<SafeHtml>(() =>
+    this.sanitizer.bypassSecurityTrustHtml(this.drawing().svg),
   );
 
   protected saveTemplate(): void {
     this.download.save(this.templateFile(), this.template().svg);
   }
 
-  protected savePlan(): void {
-    this.download.save('platform-plan.svg', this.plan());
+  protected saveDrawing(): void {
+    this.download.save('platform-drawing.svg', this.drawing().svg);
+  }
+
+  protected saveBoard(): void {
+    this.download.save('board-template-1to1.svg', this.board());
   }
 }

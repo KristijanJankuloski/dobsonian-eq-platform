@@ -22,3 +22,12 @@
   font: var(--mat-sys-body-small);
   color: var(--mat-sys-on-surface-variant);
 }
+
+// The drawing is an A3 sheet: give it the full row so the dimensions stay legible.
+.wide {
+  grid-column: 1 / -1;
+}
+
+.wide .drawing ::ng-deep svg {
+  max-height: 820px;
+}

@@ -27,10 +27,13 @@ describe('Plans', () => {
     const { el, save } = await setup();
     (el.querySelector('[data-testid="download-template"]') as HTMLButtonElement).click();
     (el.querySelector('[data-testid="download-plan"]') as HTMLButtonElement).click();
-    expect(save).toHaveBeenCalledTimes(2);
+    (el.querySelector('[data-testid="download-board"]') as HTMLButtonElement).click();
+    expect(save).toHaveBeenCalledTimes(3);
     expect(save.mock.calls[0][0]).toBe('north-segment-template-1to1.svg');
     expect(save.mock.calls[0][1]).toContain('<svg');
-    expect(save.mock.calls[1][0]).toBe('platform-plan.svg');
+    expect(save.mock.calls[1][0]).toBe('platform-drawing.svg');
+    expect(save.mock.calls[1][1]).toContain('dep-drawing');
+    expect(save.mock.calls[2][0]).toBe('board-template-1to1.svg');
   });
 
   it('offers no drawings when the segment cannot be built', async () => {

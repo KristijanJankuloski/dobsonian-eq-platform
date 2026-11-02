@@ -34,20 +34,24 @@
     </mat-card-actions>
   </mat-card>
 
-  <mat-card appearance="outlined" data-testid="card-plan">
+  <mat-card class="wide" appearance="outlined" data-testid="card-plan">
     <mat-card-header>
-      <h2 mat-card-title>Platform plan</h2>
+      <h2 mat-card-title>Platform drawing</h2>
     </mat-card-header>
     <mat-card-content>
-      <div class="drawing" [innerHTML]="planHtml()"></div>
+      <div class="drawing" [innerHTML]="drawingHtml()"></div>
       <p class="note">
-        View from above with {{ template().pole.toLowerCase() }} at the top, at 1:1 scale when
-        downloaded.
+        Front, side and plan views of the platform and its base with dimensions in mm, on an
+        {{ drawing().sheet }} sheet at 1:{{ drawing().scale }}. The top and ground boards share one
+        outline, rounded to suit a round mount base; the board template prints it at 1:1.
       </p>
     </mat-card-content>
     <mat-card-actions align="end">
-      <button mat-button type="button" (click)="savePlan()" data-testid="download-plan">
-        Download plan (SVG)
+      <button mat-button type="button" (click)="saveBoard()" data-testid="download-board">
+        Board template 1:1 (SVG)
+      </button>
+      <button mat-button type="button" (click)="saveDrawing()" data-testid="download-plan">
+        Download drawing (SVG)
       </button>
     </mat-card-actions>
   </mat-card>

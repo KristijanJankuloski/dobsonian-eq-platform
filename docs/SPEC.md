@@ -42,7 +42,7 @@ Units: millimetres, kilograms, degrees. Trig functions take radians internally. 
 | B | Height of OTA centre of gravity above ground | mm | 640 | Centre of the altitude bearings |
 | C | Weight of mount / rocker box | kg | 9.4 | |
 | D | Height of mount / box centre of gravity above ground | mm | 225 | Found by balancing the box on its side |
-| E | Width of mount base board (ground-board feet) | mm | 330 | |
+| E | Width of mount base board (ground-board feet) | mm | 330 | The diameter for a round base, which is the usual case. |
 | F | Platform thickness (gap for the segments) | mm | 75 | Default 75, user-adjustable. Ground to the top surface of the top board. |
 
 ### 4.2 Core geometry
@@ -97,6 +97,19 @@ Shown as non-blocking warnings:
 4. **Low latitude.** Warn when α < ~10°, where H and the radii become very large.
 5. **Segment cannot be built.** Show an error, and offer no template or plan, when M ≤ 0 (the polar axis is below the platform, at high latitudes or with a very thick platform) or when the arc ends do not reach below the flat edge (`I · cos(O/2) ≤ flat edge`).
 
+### 4.5 Board outline and rollers
+
+Dobsonian bases are usually round, so the top board does not have to be a rectangle. The top board and the ground board are cut to one outline, seen from above. It is the convex hull of:
+
+- a straight pole edge as long as the chord P, on the pole side of the segment and of the bearing contact (at least 20 mm past them);
+- an arc round the mount, diameter `E + I/4` (the recommended minimum width of §4.4.2: the round base plus its travel), centred under the mount at `H − E/2` from the origin;
+- a rounded nose of radius 60 mm round the pivot;
+- 25 mm round each roller.
+
+The result is wide at the pole end and tapers to the pivot. Lengths on the drawing are measured from the straight pole edge and widths from the centre line.
+
+The arc runs on two rollers on the ground board, one each side, where the arc is at ±N/2 from its centre line with the platform in the middle of its travel (under the edges of the mount base). In the segment plane (§7 axes) a roller is at `(a, b) = (±I·sin(N/2), −I·cos(N/2))`, which is `I·cos α·(1 − cos(N/2))` above the ground board. The roller axles are parallel to the polar axis.
+
 ## 5. Outputs
 
 Grouped in Material cards/tabs, each with a copy-to-clipboard button.
@@ -104,7 +117,11 @@ Grouped in Material cards/tabs, each with a copy-to-clipboard button.
 1. **Platform dimensions** — H, S, T, E, F, recommended top-board width, tracking time.
 2. **North pivot / north bearing** — radius I, segment angle N/O, chord P, segment height L, polar axis to platform M, distance from origin H.
 3. **Circular segments** (the whole arc, for reference) — table for the north segment: radius, chord length, angle, thickness, sagitta, distance from origin. The segment also gets a 2D marking-out sketch (SVG) showing radius, chord, arc angle and centre of curvature.
-4. **Plans and downloads** — a 1:1 template of one end piece (its flat edge goes against the underside of the top board) (cut two, flip the template for the second; one whole segment when no middle is left out) and a plan view of the platform (top board, mount footprint, the two pieces, the south pivot). Both are SVG drawn in millimetres, so a print at 100 % scale is 1:1, and each has a download button. The plan is for orientation: the piece positions are projected from the tilted segment plane.
+4. **Plans and downloads**, all SVG, each with a download button:
+   - a 1:1 template of one end piece (its flat edge goes against the underside of the top board) (cut two, flip the template for the second; one whole segment when no middle is left out);
+   - a **dimensioned drawing** of the platform and its base on an A3 landscape sheet, drawn at the largest standard scale that fits (1:1, 1:2, 1:2.5, 1:4, 1:5, 1:10, 1:20, 1:25, 1:50, 1:100), so a print at 100 % keeps that scale. It has a front view (from the pivot end), a side view and a plan, with dimension lines for the outline (length, width, straight pole edge, arc radii and centres), the platform height F, board thicknesses, the pivot position, T, and the roller spacing; a table of measurements (board outline, pivot, mount base, segment radius and pieces, roller positions and contact height, tracking); and a title block (project, title with latitude, size, scale, units, date, sheet). Measurements are in mm to 0.1;
+   - a 1:1 board template of the outline (§4.5), with the pivot, the mount base, the segment pieces (top board) and the rollers (ground board) marked.
+   Piece positions in the plan are projected from the tilted segment plane.
 5. **Drive (optional section)** — see §6.
 6. **3D view** — see §7.
 
@@ -134,10 +151,11 @@ Example from the source: 4 rph motor, 12.7 mm shaft → 607.9 mm (the source quo
 
 A three.js scene in a dedicated Angular component (`PlatformViewerComponent`).
 
-- Elements: ground/base board, bottom plane at thickness F, the north bearing segment as two mirrored end pieces (cylinder sections / extruded arc shapes, radius I, angle O, thickness L), the south pivot bolt, top platform board, the mount base board footprint (E), the polar axis as a line, and an indication of the combined C of G on the polar axis.
+- Elements: ground/base board and top board cut to the outline of §4.5, bottom plane at thickness F, the north bearing segment as two mirrored end pieces (cylinder sections / extruded arc shapes, radius I, angle O, thickness L), the south pivot bolt, top platform board, the mount base board footprint (E), the polar axis as a line, and an indication of the combined C of G on the polar axis.
 - A simplified telescope/mount silhouette (box + cylinder) positioned by B, D and E for context. Toggleable.
 - The polar axis tilted by α from the horizontal. A compass-style "N" marker for orientation.
 - Controls: OrbitControls (rotate/zoom/pan), reset-view button, wireframe toggle, dimension labels toggle.
+- Lettered measurements: with the dimension labels on, every lettered value of §4.1–4.2 is drawn as a line over what it measures, labelled with its letter and value: E across the mount base, F (ground to platform top), G (platform top to the combined C of G), H, S and T along the ground beside the platform, and in the segment plane M (axis to platform plane) and L (platform plane to ground) down the centre line, I out to the end of the arc, N and O as angles, and P as the chord. They are shown with the platform in the middle of its travel.
 - Rebuilds geometry reactively when inputs change (debounced ~150 ms). Dispose geometries/materials on rebuild and on destroy.
 - Optional animation: slider/play button rotating the platform about the polar axis through ±travel/2 (not O, which includes N), turning against the Earth's rotation, to illustrate tracking.
 - Axes: right-handed like three.js, y up, z towards the visible celestial pole, so x is west in the northern hemisphere and east in the southern.
