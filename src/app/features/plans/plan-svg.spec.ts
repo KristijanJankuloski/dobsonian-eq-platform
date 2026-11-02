@@ -28,6 +28,7 @@ describe('buildSegmentTemplate', () => {
     expect(t.widthMm).toBeCloseTo(g.pieceWidthMm, 1);
     expect(t.svg).toContain('flip the template over');
     expect(t.svg).toContain('underside of the 18 mm top board');
+    expect(t.svg).toContain('Bevel the top edge to 39.27° to the face');
   });
 
   it('scopes its styles to its own root, so inline previews do not restyle the page', () => {
@@ -83,6 +84,7 @@ describe('buildBoardTemplate', () => {
     expect(doc.querySelectorAll('rect.dash').length).toBe(2);
     expect(svg).toContain('south pivot');
     expect(svg).toContain('Cut 2');
+    expect(svg).toContain('at 39.27° to the board, line ');
     expect(svg).toContain('100 mm');
   });
 

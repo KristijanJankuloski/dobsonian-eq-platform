@@ -94,6 +94,27 @@ describe('buildPlatformDrawing', () => {
     expect(all.some((t) => t.startsWith('recess the ground board'))).toBe(true);
   });
 
+  it('gives the segment angle to the top board and where its line is on the board', () => {
+    const model = buildViewerModel(DEFAULT_INPUTS, split);
+    const b = model.board;
+    const seg = model.segments[0];
+    const flatZ = seg.centre.z - split.geometry.segmentFlatEdgeMm * model.planeUp.z;
+    const all = texts(buildPlatformDrawing(DEFAULT_INPUTS, split).svg);
+    // 90° − α.
+    expect(all).toContain('39.3° to top board');
+    expect(all.some((t) => t.startsWith('39.3° (90° − α), on the pole side'))).toBe(true);
+    // From the telescope (mount) centre and from the pole edge.
+    expect(all).toContain(`telescope centre to segment line ${fmt(flatZ - b.mountArc.z)}`);
+    expect(all).toContain(fmt(b.poleEdgeZ - flatZ));
+    expect(all).toContain(
+      `${fmt(flatZ - b.mountArc.z)} from the telescope centre, ${fmt(b.poleEdgeZ - flatZ)} from the pole edge`,
+    );
+    // The bevelled top edge is t / cos α wide on the board.
+    expect(all).toContain(
+      `${fmt(18 / Math.cos((50.7279 * Math.PI) / 180))} wide, centred on that line`,
+    );
+  });
+
   it('picks a smaller scale for a bigger platform', () => {
     const inputs = { ...DEFAULT_INPUTS, latitudeDeg: 15 };
     const d = buildPlatformDrawing(inputs, calculatePlatform(inputs));

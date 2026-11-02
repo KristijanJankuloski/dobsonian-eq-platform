@@ -30,7 +30,7 @@ const NOTES_WIDTH = 178;
 /** Height of the roller details, sheet mm (they are drawn at 1:1). */
 const DETAIL_HEIGHT = 62;
 /** Height of the table of measurements, sheet mm (5 + 27 rows at 4.2 + 4 headings). */
-const TABLE_HEIGHT = 125;
+const TABLE_HEIGHT = 134;
 /** How far the polar axis is drawn above the platform top in the elevations, mm (model). */
 const AXIS_ABOVE_MM = 40;
 
@@ -118,7 +118,15 @@ const textWidth = (s: string): number => s.length * 1.55;
  * Horizontal dimension between x1 and x2, measured from features at heights
  * y1 and y2, with the dimension line at yDim.
  */
-function dimH(x1: number, x2: number, y1: number, y2: number, yDim: number, label: string): string {
+function dimH(
+  x1: number,
+  x2: number,
+  y1: number,
+  y2: number,
+  yDim: number,
+  label: string,
+  outside: 'left' | 'right' = 'right',
+): string {
   const out: string[] = [];
   for (const [x, y] of [
     [x1, y1],
@@ -133,7 +141,9 @@ function dimH(x1: number, x2: number, y1: number, y2: number, yDim: number, labe
   out.push(
     fits
       ? text((a + b) / 2, yDim - 0.8, label, { anchor: 'middle' })
-      : text(b + 1.5, yDim + 1, label),
+      : outside === 'right'
+        ? text(b + 1.5, yDim + 1, label)
+        : text(a - 1.5, yDim + 1, label, { anchor: 'end' }),
   );
   return out.join('');
 }
@@ -213,6 +223,8 @@ export function buildPlatformDrawing(
   const segCentre = seg?.centre ?? { x: 0, y: 0, z: 0 };
   const flatZ = segCentre.z - g.segmentFlatEdgeMm * model.planeUp.z;
   const halfThickZ = (SEGMENT_WIDTH_MM / 2) * cosA;
+  /** Angle between each segment piece and the underside of the top board (acute, pole side). */
+  const segmentAngleDeg = 90 - Math.abs(inputs.latitudeDeg);
   const roller = model.rollers[0];
   const rollerX = Math.abs(roller.x);
   const pivot = model.pivot;
@@ -225,7 +237,7 @@ export function buildPlatformDrawing(
   const fits = (k: number): boolean => {
     const leftCol = Math.max(W / k + 16, NOTES_WIDTH);
     const width = FRAME + 6 + leftCol + 28 + 24 + L / k + 32;
-    const height = FRAME + 10 + elevH / k + 30 + 22 + W / k + 24;
+    const height = FRAME + 10 + elevH / k + 30 + 22 + W / k + 40;
     const leftHeight = FRAME + 10 + elevH / k + 32 + TABLE_HEIGHT + 4 + DETAIL_HEIGHT;
     return (
       width <= SHEET.widthMm - FRAME &&
@@ -313,6 +325,18 @@ export function buildPlatformDrawing(
       views.push(
         `<path class="part" d="${pathOf([at(bTop, -h), at(bTop, h), at(bBot, h), at(bBot, -h)])}"/>`,
       );
+      // Angle between the segment and the underside of the top board: the
+      // acute side is towards the pole, below the board, 90° − α.
+      const p0 = at(bTop, 0);
+      const R = 7;
+      const end = { x: p0.x + R * sinA, y: p0.y + R * cosA };
+      const mid = toRad((90 - Math.abs(inputs.latitudeDeg)) / 2);
+      const m = { x: p0.x + R * Math.cos(mid), y: p0.y + R * Math.sin(mid) };
+      views.push(
+        line(p0.x, p0.y, p0.x + R + 3, p0.y, 'dim'),
+        `<path class="dim" d="M ${r2(p0.x + R)} ${r2(p0.y)} A ${R} ${R} 0 0 1 ${r2(end.x)} ${r2(end.y)}"/>`,
+        leader(m.x, m.y, p0.x + 6, elevY(F) - 4, `${fmt(segmentAngleDeg)}° to top board`),
+      );
     }
     for (const r of model.rollers.slice(0, 1)) {
       views.push(`<circle class="roller" cx="${r2(zX(r.z))}" cy="${r2(elevY(r.y))}" r="1"/>`);
@@ -397,6 +421,21 @@ export function buildPlatformDrawing(
       dimH(zX(mountZ), b, planCy, top, top - 7, fmt(fromPole(mountZ))),
       dimH(zX(pivot.z), b, planCy, top, top - 15, fmt(fromPole(pivot.z))),
       dimH(a, b, bottom, bottom, bottom + 8, fmt(L)),
+      // Where the segment line is on the underside of the top board.
+      ...(seg
+        ? [
+            dimH(
+              zX(mountZ),
+              zX(flatZ),
+              planCy,
+              planY(-xo),
+              bottom + 16,
+              `telescope centre to segment line ${fmt(flatZ - mountZ)}`,
+              'left',
+            ),
+            dimH(zX(flatZ), b, planY(-xo), bottom, bottom + 24, fmt(fromPole(flatZ))),
+          ]
+        : []),
       dimV(top, bottom, b, b, b + 16, fmt(W)),
     );
     if (Math.abs(board.poleEdgeWidthMm - W) > 0.05) {
@@ -432,7 +471,7 @@ export function buildPlatformDrawing(
     views.push(
       text(
         (a + b) / 2,
-        bottom + 17,
+        bottom + 33,
         `PLAN (top board; dashed: segment and rollers below; ${names.pole.toLowerCase()} to the right)`,
         { anchor: 'middle', cls: 'label' },
       ),
@@ -467,7 +506,15 @@ export function buildPlatformDrawing(
         ? `1, ${fmt(xo)} each side of the centre line`
         : `2, each from ${fmt(xi)} to ${fmt(xo)} off the centre line`,
     ],
-    ['Flat edge (mid-board)', `${fmt(fromPole(flatZ))} from the pole edge`],
+    [
+      'Angle to the top board',
+      `${fmt(segmentAngleDeg)}° (90° − α), on the pole side; bevel the top edge to match`,
+    ],
+    [
+      'Segment line (mid-board)',
+      `${fmt(flatZ - mountZ)} from the telescope centre, ${fmt(fromPole(flatZ))} from the pole edge`,
+    ],
+    ['Top edge on the board', `${fmt(SEGMENT_WIDTH_MM / cosA)} wide, centred on that line`],
     ['#Base (ground board)', ''],
     [
       'Rollers',
