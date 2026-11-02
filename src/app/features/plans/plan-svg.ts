@@ -73,6 +73,8 @@ export function buildSegmentTemplate(result: PlatformResult, latitudeDeg = 1): S
   const outer = toRad(g.pieceOuterAngleDeg);
   const inner = toRad(g.pieceInnerAngleDeg);
   const whole = g.pieceInnerAngleDeg === 0;
+  // Angle of the piece to the top board, 90° − α, from I = H · sin α.
+  const leanDeg = 90 - (Math.asin(g.northRadiusMm / g.northDistanceMm) * 180) / Math.PI;
 
   // Centre of curvature at (0, 0); y points down; the flat edge is at y = M.
   const xo = I * Math.sin(outer);
@@ -81,7 +83,7 @@ export function buildSegmentTemplate(result: PlatformResult, latitudeDeg = 1): S
   const yi = whole ? yo : I * Math.cos(inner);
   const bottom = whole ? I : yi; // lowest point of the outline
   const pad = 30;
-  const label = 60;
+  const label = 72;
   const minX = xi;
   const width = xo - xi;
   const height = bottom - M;
@@ -107,6 +109,7 @@ export function buildSegmentTemplate(result: PlatformResult, latitudeDeg = 1): S
     `<text x="${r2(pad)}" y="${r2(pad + 20)}">Cut ${pieces}${pieces === 2 ? ' (flip the template over for the second piece)' : ''}. Print at 100 % scale.</text>`,
     `<text x="${r2(pad)}" y="${r2(pad + 30)}">Radius ${r2(I)} mm, arc ${r2(g.pieceInnerAngleDeg)}° to ${r2(g.pieceOuterAngleDeg)}° each side of centre.</text>`,
     `<text x="${r2(pad)}" y="${r2(pad + 40)}">Top edge: glue flush with the underside of the ${r2(result.options.topBoardThicknessMm)} mm top board.</text>`,
+    `<text x="${r2(pad)}" y="${r2(pad + 50)}">Bevel the top edge to ${r2(leanDeg)}° to the face: the piece leans at ${r2(leanDeg)}° (90° − α) to the board.</text>`,
     `<text x="${r2(cx)}" y="${r2(pad + label - 6)}" text-anchor="middle">top edge ${r2(width)} mm</text>`,
     // 100 mm scale bar to check the print scale.
     `<path class="line" d="M ${r2(pad)} ${r2(scaleY)} h 100 m 0 -3 v 6 m -100 0 v -6"/>`,
@@ -174,6 +177,7 @@ export function buildBoardTemplate(inputs: PlatformInputs, result: PlatformResul
     }
     parts.push(
       `<text x="${px(0)}" y="${r2(py(flatZ) + 22)}" text-anchor="middle">top board: ${whole ? 'segment' : 'two segment pieces'} underneath, radius ${r2(g.northRadiusMm)} mm</text>`,
+      `<text x="${px(0)}" y="${r2(py(flatZ) + 40)}" text-anchor="middle">at ${r2(90 - Math.abs(inputs.latitudeDeg))}° to the board, line ${r2(flatZ - board.mountArc.z)} mm from the telescope centre</text>`,
     );
   }
   for (const r of model.rollers) {
